@@ -1,3 +1,5 @@
+import { MACRO_SLOT_COUNT } from "./slot-config.js";
+
 export const MAX_TASK_ENTRIES = 5;
 export const MAX_TASK_REPEAT_COUNT = 10000;
 export const MAX_TASK_GAP_MS = 600000;
@@ -60,7 +62,7 @@ export function validateTaskPlan(plan, slots = []) {
   if (normalized.entries.length > MAX_TASK_ENTRIES) errors.push("任务方案最多包含 5 个脚本。");
   normalized.entries.forEach((entry, index) => {
     const label = `第 ${index + 1} 项`;
-    if (!Number.isInteger(entry.slot) || entry.slot < 0 || entry.slot > 7 || !slots[entry.slot]?.occupied || slots[entry.slot]?.confirmed === false) {
+    if (!Number.isInteger(entry.slot) || entry.slot < 0 || entry.slot >= MACRO_SLOT_COUNT || !slots[entry.slot]?.occupied || slots[entry.slot]?.confirmed === false) {
       errors.push(`${label}引用的脚本槽位为空。`);
     }
     if (entry.repeatCount < 1 || entry.repeatCount > MAX_TASK_REPEAT_COUNT) {

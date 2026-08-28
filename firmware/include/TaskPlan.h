@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "SlotLimits.h"
 #include "UserMacro.h"
 
 namespace farmers {
@@ -39,7 +40,7 @@ inline bool isTaskPlanStructValid(const TaskPlan& plan) {
   }
   for (size_t index = 0; index < plan.entryCount; ++index) {
     const TaskPlanEntry& entry = plan.entries[index];
-    if (entry.slot >= 8 || entry.repeatCount == 0 ||
+    if (entry.slot >= kMacroLibrarySlotCount || entry.repeatCount == 0 ||
         entry.repeatCount > kMaxTaskPlanRepeatCount ||
         entry.gapMs > kMaxTaskPlanGapMs) {
       return false;

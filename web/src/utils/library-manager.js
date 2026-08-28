@@ -1,10 +1,11 @@
 import { normalizeMacroPayloadV2 } from "./macro-editor.js";
+import { MACRO_SLOT_COUNT } from "./slot-config.js";
 import { normalizeTaskPlan, validateTaskPlan } from "./task-plan.js";
 
 export const LIBRARY_FORMAT = "splatoon-farmers-library";
 export const LIBRARY_VERSION = 2;
-export const MACRO_SLOT_COUNT = 8;
 export const TASK_TRIGGER_SLOT = MACRO_SLOT_COUNT;
+export const TRIGGER_ENTRY_COUNT = 12;
 export const SAFE_TRIGGER_PINS = Object.freeze([
   1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21,
 ]);
@@ -12,7 +13,7 @@ export const SAFE_TRIGGER_PINS = Object.freeze([
 const TRIGGER_MAGIC = 0x53465431;
 const FNV_OFFSET = 2166136261;
 const FNV_PRIME = 16777619;
-const DEFAULT_TRIGGER_PINS = [1, 2, 4, 5, 6, 7, 8, 9];
+const DEFAULT_TRIGGER_PINS = [1, 2, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14];
 
 function hashByte(checksum, value) {
   return Math.imul((checksum ^ (value & 0xff)) >>> 0, FNV_PRIME) >>> 0;
@@ -70,8 +71,8 @@ export function triggerConfigChecksum(config) {
 
 export function validateTriggerConfig(config, slots = [], taskPlan = null) {
   const errors = [];
-  if (!config || !Array.isArray(config.entries) || config.entries.length !== MACRO_SLOT_COUNT) {
-    return ["触发配置必须包含 8 个条目。"];
+  if (!config || !Array.isArray(config.entries) || config.entries.length !== TRIGGER_ENTRY_COUNT) {
+    return [`触发配置必须包含 ${TRIGGER_ENTRY_COUNT} 个条目。`];
   }
   const stopPin = Number(config.stop_pin);
   if (!SAFE_TRIGGER_PINS.includes(stopPin)) {
@@ -116,7 +117,7 @@ export function buildTriggerUploadCommands(config, slots = [], taskPlan = null) 
   const errors = validateTriggerConfig(normalized, slots, taskPlan);
   if (errors.length > 0) throw new Error(errors[0]);
   return [
-    `TRIGGER_BEGIN ${MACRO_SLOT_COUNT}`,
+    `TRIGGER_BEGIN ${TRIGGER_ENTRY_COUNT}`,
     ...normalized.entries.map((entry) =>
       `TRIGGER_ENTRY ${entry.index} ${entry.enabled ? 1 : 0} ${entry.pin} ${entry.slot}`),
     `TRIGGER_STOP_PIN ${normalized.stop_pin}`,
@@ -139,9 +140,9 @@ function normalizeLibraryTriggers(value) {
     const action = entry.action ?? entry.target;
     const slot = action === "task" ? TASK_TRIGGER_SLOT : Number(entry.slot) - 1;
     const entryIndex = Number.isInteger(Number(entry.index)) ? Number(entry.index) :
-      (slot < MACRO_SLOT_COUNT ? slot : index);
+      (slot < TRIGGER_ENTRY_COUNT ? slot : index);
     if (!Number.isInteger(slot) || slot < 0 || slot > TASK_TRIGGER_SLOT ||
-        !Number.isInteger(entryIndex) || entryIndex < 0 || entryIndex >= MACRO_SLOT_COUNT) {
+        !Number.isInteger(entryIndex) || entryIndex < 0 || entryIndex >= TRIGGER_ENTRY_COUNT) {
       throw new Error(`triggers.entries[${index}] 的目标无效。`);
     }
     result.entries[entryIndex] = {
@@ -189,7 +190,12 @@ export function normalizeLibraryDocument(documentData) {
     }
     return { slot, source: "stored", name, macro };
   });
-  if (seen.size !== MACRO_SLOT_COUNT) throw new Error("2.0 配置备份必须完整包含 8 个槽位。");
+  if (seen.size !== 8 && seen.size !== MACRO_SLOT_COUNT) throw new Error(`配置备份必须包含 8 或 ${MACRO_SLOT_COUNT} 个槽位。`);
+  while (slots.length < MACRO_SLOT_COUNT) {
+    const slot = slots.length;
+    slots.push({ slot, source: "empty", name: `槽位 ${slot + 1}` });
+  }
+  slots.sort((left, right) => left.slot - right.slot);
   const triggers = normalizeLibraryTriggers(documentData.triggers);
   const occupied = Array.from({ length: MACRO_SLOT_COUNT }, () => ({ occupied: false }));
   slots.forEach((entry) => { occupied[entry.slot] = { occupied: entry.source !== "empty", name: entry.name, slot: entry.slot }; });

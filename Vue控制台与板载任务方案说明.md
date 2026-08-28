@@ -17,7 +17,7 @@ npm run build
 
 - `#/`：首页与当前设备摘要。
 - `#/control`：连接、运行、停止、任务进度和“需要补一刀”虚拟手柄。
-- `#/scripts`：八个宏槽位与一套最多五项的宏循环。
+- `#/scripts`：十二个宏槽位与一套最多五项的宏循环。
 - `#/scripts/:slot/edit`：编辑一轮完整脚本。
 - `#/recorder`：使用中文虚拟手柄录制并写入 Flash。
 - `#/device`：双 USB 接线、GPIO 和配置备份。

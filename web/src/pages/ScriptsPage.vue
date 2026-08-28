@@ -21,7 +21,7 @@ async function removeTask() { if (!confirm("确定删除当前宏循环吗？"))
   <section>
 <div class="section-head">
 <div>
-<p class="eyebrow">BOARD LIBRARY / 八个槽位</p>
+<p class="eyebrow">BOARD LIBRARY / 十二个槽位</p>
 <h2>板载宏</h2>
 </div>
 <span class="muted">Flash 保存版本优先于同槽位的 C++ 内置版本</span>

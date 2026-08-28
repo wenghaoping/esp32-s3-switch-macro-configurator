@@ -135,3 +135,7 @@ test("accepts only the new version 2 macro JSON document", () => {
   delete oldFields.macro.steps[0].durationMs;
   assert.throws(() => normalizeMacroDocument(oldFields), /2.0 字段/);
 });
+
+test("accepts the twelfth macro slot", () => {
+  assert.equal(buildMacroUploadCommands(macro, { slot: 11, name: "Twelve" })[0], "MACRO_BEGIN 11 2 500 1");
+});

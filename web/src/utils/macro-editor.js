@@ -1,4 +1,5 @@
 import { BUTTON_BITS } from "./manual-input.js";
+import { MACRO_SLOT_COUNT } from "./slot-config.js";
 
 export const MAX_MACRO_STEPS = 512;
 export const MAX_MACRO_NAME_BYTES = 32;
@@ -308,8 +309,8 @@ export function buildMacroUploadCommands(macro, { slot = 0, name = "Macro 1" } =
   if (errors.length > 0) {
     throw new Error(errors[0]);
   }
-  if (!Number.isInteger(slot) || slot < 0 || slot > 7) {
-    throw new Error("Macro slot must be between 1 and 8.");
+  if (!Number.isInteger(slot) || slot < 0 || slot >= MACRO_SLOT_COUNT) {
+    throw new Error(`Macro slot must be between 1 and ${MACRO_SLOT_COUNT}.`);
   }
   const normalizedName = normalizeMacroName(name);
 

@@ -23,7 +23,7 @@ struct BuiltinMacroDefinition {
   uint32_t loopGapMs;
 };
 
-// 当前前 4 个槽位带有 C++ 内置版本，槽位 5～8 可由网页写入 Flash。
+// 当前前 4 个槽位带有 C++ 内置版本，槽位 5～12 可由网页写入 Flash。
 constexpr uint8_t kBuiltinMacroCount = 4;
 
 // 按 1 基槽位编号返回内置宏；该槽位没有内置版本时返回 nullptr。

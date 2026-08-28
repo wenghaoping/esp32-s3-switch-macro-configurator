@@ -7,7 +7,7 @@ const device = useDeviceStore();
   <div class="app-shell">
     <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
     <header class="topbar">
-      <RouterLink class="brand" to="/"><b>S3</b><span><strong>ESP32-S3 Configurator</strong><small>板载宏控制台</small></span></RouterLink>
+      <RouterLink class="brand" to="/"><b>S3</b><span><strong>ESP32-S3 Configurator-MMWeng</strong><small>板载宏控制台</small></span></RouterLink>
       <nav aria-label="主导航">
         <RouterLink to="/">首页</RouterLink><RouterLink to="/control">控制</RouterLink>
         <RouterLink to="/scripts">宏设置</RouterLink><RouterLink to="/recorder">录制</RouterLink>

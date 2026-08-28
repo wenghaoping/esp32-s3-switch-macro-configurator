@@ -7,11 +7,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "SlotLimits.h"
 #include "UserMacro.h"
 
 namespace farmers {
 
-constexpr uint8_t kMacroLibrarySlotCount = 8;
 // 名称按 UTF-8 字节计数；网页会以相同的 32 字节限制校验。
 constexpr size_t kMacroLibraryNameBytes = 32;
 
@@ -27,7 +27,7 @@ struct MacroSlotInfo {
 
 class MacroLibrary {
  public:
-  // 挂载 SPIFFS，并扫描八个槽位的 Flash 文件。
+  // 挂载 SPIFFS，并扫描十二个槽位的 Flash 文件。
   bool begin();
   bool available() const;
   bool hasAnyMacro() const;

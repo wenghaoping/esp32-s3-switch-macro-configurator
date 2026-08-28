@@ -8,7 +8,7 @@ watch(() => device.triggerConfig, (value) => { if (value) triggers.value = clone
 const availableSlots = computed(() => device.slots.filter((slot) => slot.occupied && slot.confirmed));
 async function saveTriggers() { try { await device.saveTriggers(triggers.value); message.value = "GPIO 配置已写入开发板。"; } catch (error) { message.value = error.message; } }
 function restoreDefaults() { triggers.value = defaultTriggerConfig(); message.value = "已载入默认绑定，点击保存后写入开发板。"; device.notify(message.value); }
-async function exportConfig() { if (!device.ready) { message.value="请先连接并等待固件响应。"; device.notify(message.value, "error"); return; } try { const slots=[]; for (const slot of device.slots) { if (slot.source === "stored") { const loaded=await device.loadMacro(slot.slot); slots.push({ slot:slot.slot+1, source:"stored", name:slot.name, macro:{ steps:loaded.steps, loopGapMs:loaded.loopGapMs } }); } else { slots.push({ slot:slot.slot+1, source:slot.source, name:slot.name }); } } const documentData={ format:LIBRARY_FORMAT, version:LIBRARY_VERSION, slots, triggers:serializeTriggerConfig(triggers.value), taskPlan:device.taskPlan }; const url=URL.createObjectURL(new Blob([JSON.stringify(documentData,null,2)],{type:"application/json"})); const link=document.createElement("a"); link.href=url; link.download="splatoon-farmers-backup-v2.json"; link.click(); URL.revokeObjectURL(url); message.value="已导出完整 2.0 配置备份。"; device.notify(message.value); } catch(error) { message.value=error.message||"备份导出失败。"; device.notify(message.value, "error"); } }
+async function exportConfig() { if (!device.ready) { message.value="请先连接并等待固件响应。"; device.notify(message.value, "error"); return; } try { const slots=[]; for (const slot of device.slots) { if (slot.source === "stored") { const loaded=await device.loadMacro(slot.slot); slots.push({ slot:slot.slot+1, source:"stored", name:slot.name, macro:{ steps:loaded.steps, loopGapMs:loaded.loopGapMs } }); } else { slots.push({ slot:slot.slot+1, source:slot.source, name:slot.name }); } } const documentData={ format:LIBRARY_FORMAT, version:LIBRARY_VERSION, slots, triggers:serializeTriggerConfig(triggers.value), taskPlan:device.taskPlan }; const url=URL.createObjectURL(new Blob([JSON.stringify(documentData,null,2)],{type:"application/json"})); const link=document.createElement("a"); link.href=url; link.download="splatoon-farmers-backup-v2.json"; link.click(); URL.revokeObjectURL(url); message.value="已导出完整配置备份。"; device.notify(message.value); } catch(error) { message.value=error.message||"备份导出失败。"; device.notify(message.value, "error"); } }
 async function importConfig(event) { const file=event.target.files?.[0]; if(!file)return; try { if (!device.ready) throw new Error("请先连接并等待固件响应。"); const data=normalizeLibraryDocument(JSON.parse(await file.text())); await device.stop(); for (const slot of data.slots) { if (slot.source === "stored") await device.saveMacro(slot.slot,slot.name,slot.macro); else if (slot.source === "builtin") await device.restoreMacro(slot.slot); else await device.deleteMacro(slot.slot); } if(data.taskPlan) await device.saveTask(data.taskPlan); else await device.deleteTask(); await device.saveTriggers(data.triggers); await device.refreshAll(); message.value="2.0 配置备份已完整恢复。"; device.notify(message.value); } catch(error) { message.value=error.message||"备份导入失败。"; device.notify(message.value, "error"); } event.target.value=""; }
 </script>
 <template>
@@ -45,7 +45,7 @@ async function importConfig(event) { const file=event.target.files?.[0]; if(!fil
 <button class="secondary" @click="restoreDefaults">恢复默认绑定</button>
 </div>
 <p class="muted">GPIO 使用内部上拉，外部按钮只连接 GPIO 与 GND。每个启动引脚可运行一个宏，或启动已保存的宏循环。</p>
-<div class="trigger-grid">
+<div class="trigger-grid trigger-slots">
 <article v-for="entry in triggers.entries" :key="entry.index">
 <b>触发 {{ entry.index+1 }}</b>
 <label class="field">
@@ -84,7 +84,7 @@ async function importConfig(event) { const file=event.target.files?.[0]; if(!fil
 <h2>宏、任务和 GPIO</h2>
 </div>
 </div>
-<p>2.0 配置备份包含 8 个槽位、Flash 宏动作、当前保存的一套宏循环和 GPIO。只接受全新的 2.0 JSON，不兼容旧备份。</p>
+<p>2.0 配置备份包含 12 个槽位、Flash 宏动作、当前保存的一套宏循环和 GPIO；也兼容旧的 8 槽位备份。</p>
 <div class="action-row">
 <button class="secondary" :disabled="!device.ready" @click="exportConfig">导出完整配置</button>
 <label class="secondary file-button">导入 2.0 配置<input type="file" accept=".json,application/json" @change="importConfig">

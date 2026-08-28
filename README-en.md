@@ -27,8 +27,8 @@ Required setup for that example macro: [Bilibili](https://www.bilibili.com/video
   for any game that supports a Switch wired controller.
 - Includes four replaceable C++ example macros in firmware: Tempura Nest weapon
   farming, Anling Nest money farming, weapon dismantling, and controller
-  connection. Slots 5–8 are ready for custom scripts.
-- Manages eight macro slots in total. A script saved from the WebUI is stored
+  connection. Slots 5–12 are ready for custom scripts.
+- Manages twelve macro slots in total. A script saved from the WebUI is stored
   in Flash and takes priority over the compiled script in the same slot; it can
   be deleted to restore that built-in script.
 - Runs a selected macro continuously, or runs a board-resident task made of up
@@ -42,7 +42,7 @@ Required setup for that example macro: [Bilibili](https://www.bilibili.com/video
   serial connection.
 - Records controller actions, edits step-by-step macros, imports/exports
   version-2 JSON macros, and backs up or restores the full macro library.
-- Supports eight configurable GPIO macro triggers plus one stop trigger, so
+- Supports twelve configurable GPIO macro triggers plus one stop trigger, so
   selected macros can run without a browser after configuration is saved.
 - Provides all digital buttons, D-pad directions, and both analog sticks for
   mouse, touch, and keyboard input. Browser-held inputs are released when the
@@ -122,7 +122,7 @@ stop it, reset the board, or remove power when you need to end it.
 | --- | --- |
 | `#/` | Connection state, current macro status, and quick start/stop |
 | `#/control` | Run the selected macro and use the manual controller deck |
-| `#/scripts` | Manage the eight slots and create a board task plan |
+| `#/scripts` | Manage the twelve slots and create a board task plan |
 | `#/scripts/:slot/edit` | Edit a macro step by step, then upload it transactionally |
 | `#/recorder` | Record button input and turn it into an editable macro |
 | `#/device` | Inspect device information and configure offline GPIO triggers |
@@ -139,7 +139,7 @@ stopped. The recorder, editor, and import/export functions use explicit version
 | 2 | Anling Nest money farming | `firmware/src/builtins/AnlingNestMoneyFarm.cpp` |
 | 3 | Weapon dismantling | `firmware/src/builtins/WeaponDismantle.cpp` |
 | 4 | Connect controller | `firmware/src/builtins/ConnectController.cpp` |
-| 5–8 | Empty by default | Available for custom macros |
+| 5–12 | Empty by default | Available for custom macros |
 
 For each slot, the runtime priority is **WebUI Flash script > compiled C++
 built-in**. Editing a built-in slot in the WebUI does not change the C++ source;
@@ -148,7 +148,7 @@ it creates a persistent Flash override. Use **Restore built-in** (or
 
 ### GPIO offline triggers
 
-The device page can save eight macro-start GPIO entries and one dedicated stop
+The device page can save twelve macro-start GPIO entries and one dedicated stop
 GPIO entry. Pins are checked against the firmware's safe allowlist, and the
 configuration is uploaded transactionally with a checksum. After saving, the
 board can start the assigned macro without a browser; disconnecting the
@@ -185,7 +185,7 @@ The control link is `115200 baud`, ASCII, one command per line.
 | `STATUS` | Return phase, step, cycle count, and timing |
 | `PING` | Return `PONG` |
 | `MACRO_GET` | Return the active complete macro as JSON |
-| `MACRO_LIST` | Return the eight macro slots and active slot as JSON |
+| `MACRO_LIST` | Return the twelve macro slots and active slot as JSON |
 | `MACRO_BEGIN slot steps gap repeat` | Begin a transactional macro upload |
 | `MACRO_STEP index hold wait buttons dpad lx ly rx ry` | Add one macro action with hold and post-action wait |
 | `MACRO_COMMIT checksum` | Validate and persist the pending macro upload |
@@ -223,7 +223,7 @@ Project layout:
 - `firmware/src/builtins/` — one C++ source file for each built-in macro
 - `firmware/src/BuiltinMacroLibrary.cpp` — built-in slot registry
 - `firmware/include/ControllerPresets.h` — shared controller reports, button masks, and stick directions
-- `firmware/src/MacroLibrary.cpp` — persistent eight-slot Flash macro library
+- `firmware/src/MacroLibrary.cpp` — persistent twelve-slot Flash macro library
 - `firmware/src/MacroEngine.cpp` — non-blocking loop engine
 - `firmware/src/main.cpp` — USB HID, serial protocol, and device main loop
 - `firmware/src/TaskPlanStorage.cpp` — persistent five-item board task plan

@@ -34,8 +34,8 @@ namespace {
 
 constexpr uint32_t kControlBaudRate = 115200;
 constexpr char kFirmwareVersion[] = "SplatoonFarmers/2.0.1";
-constexpr uint8_t kTriggerCount = 8;
-// GPIO trigger targets use 0-7 for macro slots; 8 starts the saved task plan.
+constexpr uint8_t kTriggerCount = 12;
+// GPIO trigger targets use 0-11 for macro slots; 12 starts the saved task plan.
 constexpr uint8_t kTaskTriggerSlot = farmers::kMacroLibrarySlotCount;
 constexpr uint8_t kDefaultStopPin = 10;
 constexpr uint32_t kTriggerDebounceMs = 50;
@@ -308,10 +308,10 @@ bool validateTriggerConfig(const TriggerConfig& config) {
 
 void defaultTriggerConfig() {
   // 默认将前 4 个 GPIO 绑定到 4 个内置槽位，其余条目禁用但仍保留位置，
-  // 这样网页可用一次事务上传完整 8 项配置。
+  // 这样网页可用一次事务上传完整 12 项配置。
   TriggerSettings = {};
   TriggerSettings.magic = kTriggerConfigMagic;
-  const uint8_t defaults[kTriggerCount] = {1, 2, 4, 5, 6, 7, 8, 9};
+  const uint8_t defaults[kTriggerCount] = {1, 2, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14};
   for (size_t index = 0; index < kTriggerCount; ++index) {
     TriggerSettings.entries[index] = {
         defaults[index], static_cast<uint8_t>(index),
@@ -623,7 +623,7 @@ void emitMacro() {
 }
 
 void emitMacroList() {
-  // 返回八个槽位摘要。Flash 保存版本优先显示，否则显示 C++ 内置版本。
+  // 返回十二个槽位摘要。Flash 保存版本优先显示，否则显示 C++ 内置版本。
   ATT_CONTROL_SERIAL.printf(
       "{\"type\":\"macro_list\",\"ok\":true,\"active_slot\":%d,"
       "\"slots\":[",

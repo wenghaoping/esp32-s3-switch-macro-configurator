@@ -7,6 +7,7 @@ import { BUILTIN_MACROS } from "../utils/builtin-macros.js";
 import { buildTaskUploadCommands, normalizeTaskPlan } from "../utils/task-plan.js";
 import { buildManualReport } from "../utils/manual-input.js";
 import { buildTriggerUploadCommands } from "../utils/library-manager.js";
+import { MACRO_SLOT_COUNT } from "../utils/slot-config.js";
 
 const expectedBuiltins = BUILTIN_MACROS.map(({ name, macro }) => ({
   name,
@@ -27,7 +28,7 @@ export const useDeviceStore = defineStore("device", () => {
   const error = ref("");
   const notification = ref(null);
   const status = ref({ state: "idle", name: "", source: "empty", step: 0, steps: 0 });
-  const slots = ref(Array.from({ length: 8 }, (_, slot) => initialSlot(slot)));
+  const slots = ref(Array.from({ length: MACRO_SLOT_COUNT }, (_, slot) => initialSlot(slot)));
   const taskPlan = ref(null);
   const triggerConfig = ref(null);
   let pollTimer = null;

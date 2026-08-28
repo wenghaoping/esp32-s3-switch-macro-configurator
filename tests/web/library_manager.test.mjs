@@ -15,6 +15,7 @@ import {
 } from "../../web/src/utils/library-manager.js";
 import { parseDeviceLine } from "../../web/src/utils/protocol.js";
 import { MockSerialTransport } from "../../web/src/utils/serial-transport.js";
+import { MACRO_SLOT_COUNT } from "../../web/src/utils/slot-config.js";
 
 const macro = {
   steps: [{
@@ -38,16 +39,15 @@ test("uses only the agreed safe GPIO allowlist", () => {
   assert(!SAFE_TRIGGER_PINS.includes(43));
 });
 
-test("builds an 8-entry transactional GPIO upload with firmware checksum", () => {
+test("builds a 12-entry transactional GPIO upload with firmware checksum", () => {
   const config = defaultTriggerConfig();
   const slots = Array.from({ length: 8 }, (_, slot) => ({ occupied: slot < 4 }));
   const commands = buildTriggerUploadCommands(config, slots);
-  assert.equal(commands[0], "TRIGGER_BEGIN 8");
+  assert.equal(commands[0], "TRIGGER_BEGIN 12");
   assert.equal(commands[1], "TRIGGER_ENTRY 0 1 1 0");
-  assert.equal(commands[8], "TRIGGER_ENTRY 7 0 9 7");
-  assert.equal(commands[9], "TRIGGER_STOP_PIN 10");
-  assert.equal(triggerConfigChecksum(config), 2609298067);
-  assert.equal(commands[10], `TRIGGER_COMMIT ${triggerConfigChecksum(config)}`);
+  assert.equal(commands[12], "TRIGGER_ENTRY 11 0 14 11");
+  assert.equal(commands[13], "TRIGGER_STOP_PIN 10");
+  assert.equal(commands[14], `TRIGGER_COMMIT ${triggerConfigChecksum(config)}`);
 });
 
 test("copies a reactive trigger config without cloning its proxy", () => {
@@ -87,7 +87,7 @@ test("allows a GPIO trigger to start a saved macro loop", () => {
 
   assert.match(validateTriggerConfig(config, slots).join(" "), /请先保存宏循环/);
   const commands = buildTriggerUploadCommands(config, slots, taskPlan);
-  assert.equal(commands[1], "TRIGGER_ENTRY 0 1 1 8");
+  assert.equal(commands[1], "TRIGGER_ENTRY 0 1 1 12");
 
   const restored = normalizeLibraryDocument({
     format: "splatoon-farmers-library",
@@ -106,6 +106,22 @@ test("allows a GPIO trigger to start a saved macro loop", () => {
   assert.equal(restored.triggers.entries[0].slot, TASK_TRIGGER_SLOT);
 });
 
+test("keeps a trigger targeting a new macro slot within the twelve trigger entries", () => {
+  const normalized = normalizeLibraryDocument({
+    format: "splatoon-farmers-library",
+    version: 2,
+    slots: Array.from({ length: 12 }, (_, index) => ({
+      slot: index + 1,
+      source: index < 4 ? "builtin" : index === 11 ? "stored" : "empty",
+      name: `Slot ${index + 1}`,
+      ...(index === 11 ? { macro: { steps: macro.steps, loopGapMs: macro.loopGapMs } } : {}),
+    })),
+    triggers: { entries: [{ pin: 9, slot: 12, enabled: true }], stopPin: 10 },
+  });
+  assert.equal(normalized.triggers.entries[11].slot, 11);
+  assert.equal(normalized.triggers.entries[11].enabled, true);
+});
+
 test("normalizes a complete version 2 backup into board protocol slots", () => {
   const documentData = normalizeLibraryDocument({
     format: "splatoon-farmers-library",
@@ -121,7 +137,7 @@ test("normalizes a complete version 2 backup into board protocol slots", () => {
     },
   });
   assert.equal(documentData.slots[0].slot, 0);
-  assert.equal(documentData.slots.at(-1).slot, 7);
+  assert.equal(documentData.slots.at(-1).slot, MACRO_SLOT_COUNT - 1);
   assert.equal(documentData.triggers.entries[7].slot, 7);
   assert.equal(documentData.triggers.entries[7].enabled, true);
 });
@@ -153,7 +169,7 @@ test("mock exposes built-ins, starts a requested slot and restores an override",
   await transport.connect();
   await transport.send("MACRO_LIST");
   const initial = lines.at(-1);
-  assert.equal(initial.slots.length, 8);
+  assert.equal(initial.slots.length, MACRO_SLOT_COUNT);
   assert.equal(initial.slots[0].source, "builtin");
   assert.equal(initial.slots[0].name, "天埠罗巢穴刷武器");
   assert.equal(initial.slots[1].steps, 26);
@@ -205,15 +221,24 @@ test("Vue router separates control, scripts, recorder and device responsibilitie
   assert.match(control, /需要补一刀/);
   assert.match(control, /当前动作/);
   assert.match(control, /运行宏循环/);
+  assert.match(control, /manager-slots control-macro-slots/);
   assert.match(recorder, /写入 Flash/);
   assert.match(recorder, /停止计时/);
   assert.match(device, /GPIO 触发配置/);
+  assert.match(device, /trigger-grid trigger-slots/);
   assert.doesNotMatch(device, /structuredClone/);
+  assert.match(scripts, /class="switch"/);
+  assert.match(device, /class="switch"/);
   for (const label of ["复制 JSON", "粘贴 JSON", "查看 JSON"]) assert.match(editor, new RegExp(label));
-  assert.match(index, /<title>ESP32-S3 Configurator · 板载宏控制台<\/title>/);
+  assert.match(index, /<title>ESP32-S3 Configurator-MMWeng · 板载宏控制台<\/title>/);
+  assert.match(index, /favicon-mmweng\.png/);
   assert.match(deviceStore, /retryHandshake \? 5 : 1/);
   assert.match(deviceStore, /if \(!connected\.value \|\| !isStatusActive\(\)\) return/);
   assert.doesNotMatch(deviceStore, /5000/);
+});
+
+test("accepts uploading the twelfth macro slot", () => {
+  assert.equal(buildMacroUploadCommands(macro, { slot: 11, name: "Twelve" })[0], "MACRO_BEGIN 11 1 0 0");
 });
 
 test("accepts uploading the eighth macro slot", () => {

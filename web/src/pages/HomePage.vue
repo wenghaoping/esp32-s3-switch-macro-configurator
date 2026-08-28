@@ -4,7 +4,7 @@ import PageTitle from "../components/PageTitle.vue";
 const device = useDeviceStore();
 const cards = [
   ["/control","控制中心","运行单个宏或已保存的宏循环，查看实时进度并手动补操作。","立即控制"],
-  ["/scripts","宏设置","查看八个板载槽位，编辑完整宏并配置一套最多五项的宏循环。","管理宏与循环"],
+  ["/scripts","宏设置","查看十二个板载槽位，编辑完整宏并配置一套最多五项的宏循环。","管理宏与循环"],
   ["/recorder","宏录制","使用中文虚拟手柄录制动作，预览后写入 Flash。","开始录制"],
   ["/device","设备与 GPIO","检查双 USB 接线、离线触发和宏库备份。","设备设置"],
 ];

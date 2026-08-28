@@ -76,7 +76,7 @@ const currentAction = computed(() => describeCurrentAction(device.status));
 </div>
 <span class="muted">点击后持续循环，直到停止</span>
 </div>
-<div class="slot-grid">
+<div class="slot-grid manager-slots control-macro-slots">
 <article v-for="slot in device.slots" :key="slot.slot" class="slot-card" :class="{ empty: !slot.occupied }">
 <span>槽位 {{ slot.slot+1 }}</span>
 <h3>{{ slot.occupied ? slot.name : '空槽位' }}</h3>

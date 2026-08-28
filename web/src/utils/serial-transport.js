@@ -11,6 +11,7 @@ import {
   validateTriggerConfig,
 } from "./library-manager.js";
 import { normalizeTaskPlan, taskPlanChecksum } from "./task-plan.js";
+import { MACRO_SLOT_COUNT } from "./slot-config.js";
 
 export class SerialLineDecoder {
   constructor() {
@@ -254,7 +255,7 @@ export class MockSerialTransport {
     this.source = "builtin";
     this.stagedMacro = null;
     this.builtinMacros = BUILTIN_MACROS.map(({ macro }) => structuredClone(macro));
-    this.slots = Array.from({ length: 8 }, (_, slot) => this.builtinMacros[slot] ? {
+    this.slots = Array.from({ length: MACRO_SLOT_COUNT }, (_, slot) => this.builtinMacros[slot] ? {
       slot,
       occupied: true,
       source: "builtin",
@@ -266,7 +267,7 @@ export class MockSerialTransport {
       loop_gap_ms: this.builtinMacros[slot].loopGapMs,
       repeat: this.builtinMacros[slot].repeat,
     } : { slot, occupied: false, source: "empty", has_builtin: false, has_stored: false });
-    this.slotMacros = Array.from({ length: 8 }, (_, slot) => this.builtinMacros[slot] ? structuredClone(this.builtinMacros[slot]) : null);
+    this.slotMacros = Array.from({ length: MACRO_SLOT_COUNT }, (_, slot) => this.builtinMacros[slot] ? structuredClone(this.builtinMacros[slot]) : null);
     this.activeSlot = 0;
     this.triggerConfig = { type: "trigger_config", ok: true, ...defaultTriggerConfig() };
     this.stagedTriggerConfig = null;
@@ -378,7 +379,7 @@ export class MockSerialTransport {
     } else if (command === "TRIGGER_DEFAULT") {
       this.triggerConfig = { type: "trigger_config", ok: true, ...defaultTriggerConfig() };
       this.onLine(JSON.stringify(this.triggerConfig));
-    } else if (command === "TRIGGER_BEGIN 8") {
+    } else if (command === "TRIGGER_BEGIN 12") {
       this.stagedTriggerConfig = structuredClone(this.triggerConfig);
       this.onLine("OK");
     } else if (command.startsWith("TRIGGER_STOP_PIN ")) {
@@ -432,7 +433,7 @@ export class MockSerialTransport {
     } else if (command.startsWith("MACRO_BEGIN ")) {
       const values = command.split(" ").slice(1).map(Number);
       const [slot, count, loopGapMs, repeat] = values;
-      if (!Number.isInteger(slot) || slot < 0 || slot > 7 || !Number.isInteger(count) || count < 1 || count > 512) {
+      if (!Number.isInteger(slot) || slot < 0 || slot >= MACRO_SLOT_COUNT || !Number.isInteger(count) || count < 1 || count > 512) {
         this.emitError("macro-begin-invalid");
         return;
       }
@@ -521,7 +522,7 @@ export class MockSerialTransport {
       this.emit("status");
     } else if (command.startsWith("MACRO_DELETE ")) {
       const slot = Number(command.slice(13));
-      if (!Number.isInteger(slot) || slot < 0 || slot > 7) {
+      if (!Number.isInteger(slot) || slot < 0 || slot >= MACRO_SLOT_COUNT) {
         this.emitError("macro-delete-failed");
         return;
       }

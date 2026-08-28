@@ -23,7 +23,7 @@
 | `include/MacroEngine.h` | 声明宏步骤、阶段枚举和非阻塞宏引擎接口。 |
 | `src/MacroEngine.cpp` | 实现宏状态机；不使用 `delay()`，所以运行时仍可响应停止和串口命令。 |
 | `include/UserMacro.h` | 定义网页上传宏的 512 步固定容量格式、时长限制及跨端校验和。 |
-| `include/MacroLibrary.h` | 声明 8 槽 Flash 宏库；Flash 版本优先于同槽位 C++ 内置版本。 |
+| `include/MacroLibrary.h` | 声明 12 槽 Flash 宏库；Flash 版本优先于同槽位 C++ 内置版本。 |
 | `src/MacroLibrary.cpp` | 使用 SPIFFS 保存宏文件，并以临时文件/备份文件方式完成替换。 |
 | `include/BuiltinMacroLibrary.h` | 定义内置宏描述结构，并按 1 基槽位查询内置宏。 |
 | `include/BuiltinMacros.h` | 汇总各独立内置宏文件的声明，是新增内置宏时要补充的声明点。 |
