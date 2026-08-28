@@ -1,0 +1,26 @@
+{
+  "name": "splatoon-farmers",
+  "version": "2.0.0",
+  "description": "Board-resident ESP32-S3 material farming controller with a Web Serial console.",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "type": "module",
+  "scripts": {
+    "test": "npm run test:firmware && npm run test:web",
+    "test:firmware": "c++ -std=c++17 -Wall -Wextra -Werror -pedantic -I firmware/include firmware/src/MacroEngine.cpp firmware/src/BuiltinMacroLibrary.cpp firmware/src/builtins/TempuraNestWeaponFarm.cpp firmware/src/builtins/AnlingNestMoneyFarm.cpp firmware/src/builtins/WeaponDismantle.cpp firmware/src/builtins/ConnectController.cpp tests/firmware/test_macro_engine.cpp -o /tmp/splatoon-farmers-macro-test && /tmp/splatoon-farmers-macro-test",
+    "test:web": "node --test tests/web/*.test.mjs tests/data/*.test.mjs",
+    "dev": "vite --config vite.config.js",
+    "build": "vite build --config vite.config.js",
+    "serve": "vite --config vite.config.js --host 0.0.0.0 --open",
+    "preview": "vite preview --config vite.config.js"
+  },
+  "dependencies": {
+    "pinia": "^3.0.3",
+    "vue": "^3.5.21",
+    "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.1",
+    "vite": "^7.1.4"
+  }
+}
