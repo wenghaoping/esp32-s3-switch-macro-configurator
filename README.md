@@ -25,7 +25,7 @@ Vue 3 控制台、宏录制、十二个脚本槽位和五段板载任务说明�
 - 可为任意游戏录制、编辑、导入并运行自定义按键、十字键和双摇杆宏，不限定某个游戏或固定流程。
 - 固件内置 4 个可替换示例宏：天埠罗巢穴刷武器、杏棱巢穴刷钱、武器分解和连接手柄；第 5～12 槽预留给自定义宏。
 - 共管理 12 个宏槽位。网页保存的脚本写入 Flash，同槽位下会优先于 C++ 内置脚本运行；删除网页覆盖即可恢复内置版本。
-- 宏编辑器支持逐步骤编辑、事务式上传与校验；录制器支持将实际按键操作转换为可编辑宏；支持 v2 JSON 宏导入导出及完整脚本库备份恢复。
+- 宏编辑器支持逐步骤编辑、事务式上传与校验；录制器支持网页手柄、键盘、Xbox Elite 2 和 PS5 DualSense，并提供精细模拟量与视角固定脉冲两种模式；支持 v2 JSON 宏导入导出及完整脚本库备份恢复。
 - 支持单宏无限循环，也支持最多 5 项的板载跨脚本任务；每项可设置运行次数和完成后间隔，整个任务方案还可整体循环。
 - 浏览器或 USB-UART 断开后，正在运行的宏或板载任务仍会继续；关键时序完全由 ESP32-S3 执行，不受普通串口抖动影响。
 - 提供 Vue 3 + Vite 单页控制台：首页、控制、脚本库、编辑器、录制器和设备/GPIO 页面切换时均保持同一次 Web Serial 连接。
@@ -37,101 +37,45 @@ Vue 3 控制台、宏录制、十二个脚本槽位和五段板载任务说明�
 
 ## 控制台界面
 
-前五张截图按文件编号 1～5 排列，展示网页控制台的主要页面；随后展示宏编辑器展开和收起手柄示例时的对比。
+以下截图均来自当前版本 WebUI，并在侧边栏连接开发板后重新获取，画面中的槽位、宏循环和“设备可用”状态来自真实设备。接入 Xbox Elite 2 或 PS5 DualSense 时，需使用桌面版 Chrome/Edge，并在录制页扫描手柄。
 
-<a id="console-gallery"></a>
+### 首页
 
-### 快速跳转
+查看连接状态、当前宏和各功能入口。
 
-| 图例 | 主要功能 | 直达 |
-| --- | --- | --- |
-| 首页 | 连接状态、当前宏与功能入口 | [查看首页](#console-home) |
-| 控制中心 | 启动/停止、运行进度与手动接管 | [查看控制中心](#console-control) |
-| 宏设置 | 宏槽位与板载宏循环 | [查看宏设置](#console-scripts) |
-| 宏录制 | 虚拟手柄录制新宏 | [查看宏录制](#console-recorder) |
-| 设备与 GPIO | 接线、离线触发与备份 | [查看设备与 GPIO](#console-device) |
-| 宏编辑器 | 展开手柄示例 / 收起步骤总览 | [展开](#console-editor-expanded) · [收起](#console-editor-collapsed) |
-| 板载宏循环 | 顺序、次数与整轮循环设置 | [查看宏循环](#console-task-loop) |
+![首页：连接状态与功能入口](./images/screenshots/home.png)
 
-<a id="console-home"></a>
+### 控制中心
 
-### 1. 首页
+运行宏或板载宏循环，查看进度，并临时使用下方的虚拟 Switch 手柄接管输入。
 
-连接设备后可查看当前宏、运行状态和宏循环概览，并快速进入各功能页面。
+![控制中心：宏运行和手动控制](./images/screenshots/control.png)
 
-![首页：连接状态与功能入口](./images/screenshots/1.png)
+### 宏设置与板载宏循环
 
-[↑ 返回快速跳转](#console-gallery)
+管理 12 个宏槽位，将最多 5 个已保存宏按顺序组合，并设置每项次数、等待时间和整轮循环。
 
-<a id="console-control"></a>
+![宏设置：槽位库与板载宏循环](./images/screenshots/macro-settings.png)
 
-### 2. 控制中心
+![板载宏循环：顺序、次数和整体循环设置](./images/screenshots/macro-loop.png)
 
-运行指定宏、查看步骤进度和循环次数；下方提供全部按键及双摇杆的临时手动接管。
+### 手柄录制与新录制模式
 
-![控制中心：宏运行和手动控制](./images/screenshots/2.jpeg)
+录制页支持网页手柄、键盘、Xbox Elite 2 和 PS5 DualSense。实体手柄会按位置映射为 Switch 输入；精细模拟量模式保留摇杆力度，视角固定脉冲模式则将右摇杆整理为固定的上、下、左、右方向。
 
-[↑ 返回快速跳转](#console-gallery)
+![手柄录制：Xbox/PS5 识别与两种录制模式](./images/screenshots/recorder-gamepad-modes.png)
 
-<a id="console-scripts"></a>
+### 通过手柄设置宏
 
-### 3. 宏设置
+宏编辑器中的每个动作都可以展开 Switch 手柄示例，直接点击按键、十字键和双摇杆来配置该动作，同时设置按住时长和松开后的等待时间。
 
-管理 12 个宏槽位、载入或新建宏，并将最多 5 个宏按顺序组合为板载宏循环。
+![宏编辑器：逐动作展开手柄配置](./images/screenshots/macro-editor-gamepad.png)
 
-![宏设置：槽位库与板载宏循环](./images/screenshots/3.png)
-
-[↑ 返回快速跳转](#console-gallery)
-
-<a id="console-recorder"></a>
-
-### 4. 宏录制
-
-通过屏幕上的虚拟 Switch 手柄录制按键和摇杆动作，预览后保存至目标槽位。
-
-![宏录制：虚拟手柄输入](./images/screenshots/4.png)
-
-[↑ 返回快速跳转](#console-gallery)
-
-<a id="console-device"></a>
-
-### 5. 设备与 GPIO
+### 设备、GPIO 与备份
 
 查看双 USB 接线方式，配置离线 GPIO 触发器，并导出或导入宏、任务和 GPIO 的完整备份。
 
-![设备与 GPIO：接线、触发器和备份](./images/screenshots/5.jpeg)
-
-[↑ 返回快速跳转](#console-gallery)
-
-<a id="console-editor-expanded"></a>
-
-### 宏编辑器：展开手柄示例
-
-每一个动作都可直接通过可视化 Switch 手柄配置按键、十字键和摇杆，适合逐步创建新的游戏宏。
-
-![宏编辑器：展开手柄示例](./images/screenshots/macro-editor-expanded.jpeg)
-
-[↑ 返回快速跳转](#console-gallery)
-
-<a id="console-editor-collapsed"></a>
-
-### 宏编辑器：收起步骤总览
-
-点击“收起手柄示例”后，隐藏每一步的大型手柄面板，仅保留动作、保持时间、等待时间和动作摘要，方便快速检查完整宏的所有步骤；再次点击即可展开。
-
-![宏编辑器：收起手柄示例后的步骤总览](./images/screenshots/macro-editor-collapsed.png)
-
-[↑ 返回快速跳转](#console-gallery)
-
-<a id="console-task-loop"></a>
-
-### 板载宏循环
-
-将最多 5 个已保存的宏按顺序编排为一个板载任务。每一项可独立设置完成运行次数与完成后等待时间，并可选择在全部项目完成后从头循环；保存到开发板后，无需持续连接浏览器也能执行。
-
-![板载宏循环：顺序、次数和整体循环设置](./images/screenshots/macro-loop.jpg)
-
-[↑ 返回快速跳转](#console-gallery)
+![设备与 GPIO：接线、触发器和备份](./images/screenshots/device-gpio.png)
 
 ## 硬件
 

@@ -42,6 +42,8 @@ Required setup for that example macro: [Bilibili](https://www.bilibili.com/video
   serial connection.
 - Records controller actions, edits step-by-step macros, imports/exports
   version-2 JSON macros, and backs up or restores the full macro library.
+- Supports browser controls, keyboard input, Xbox Elite 2, and PS5 DualSense
+  recording, with precise analog and fixed-axis right-stick pulse modes.
 - Supports twelve configurable GPIO macro triggers plus one stop trigger, so
   selected macros can run without a browser after configuration is saved.
 - Provides all digital buttons, D-pad directions, and both analog sticks for
@@ -51,6 +53,37 @@ Required setup for that example macro: [Bilibili](https://www.bilibili.com/video
 During automatic operation, the browser sends high-level start, stop, upload,
 and status commands. Timing is owned by the microcontroller, so normal serial
 jitter cannot break a sequence halfway through.
+
+## Web console screenshots
+
+The screenshots below were recaptured from the current WebUI after connecting
+the board in the sidebar; slot data, task-loop data, and the “device available”
+state come from the real device. Xbox Elite 2 and PS5 DualSense recording still
+requires desktop Chrome or Edge and a controller connected on the Recorder
+page.
+
+### Macro settings and board task loop
+
+Manage twelve macro slots and combine up to five saved macros into a board task
+with per-item repeat counts, gaps, and whole-plan looping.
+
+![Macro settings and board task loop](./images/screenshots/macro-settings.png)
+
+![Board task loop ordering and repeat settings](./images/screenshots/macro-loop.png)
+
+### Controller recording modes
+
+The Recorder page maps Xbox and PS5 controller positions to Switch inputs and
+offers precise analog recording or fixed-axis right-stick view pulses.
+
+![Xbox/PS5 recording and recording modes](./images/screenshots/recorder-gamepad-modes.png)
+
+### Configure a macro with the virtual controller
+
+Expand each action to configure buttons, the D-pad, and both sticks directly
+through the visual Switch controller.
+
+![Step-by-step virtual controller macro editing](./images/screenshots/macro-editor-gamepad.png)
 
 ## Hardware
 
