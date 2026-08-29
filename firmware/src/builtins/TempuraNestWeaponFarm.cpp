@@ -7,16 +7,16 @@ namespace farmers {
 namespace builtins {
 namespace {
 
-// 来源：天埠罗巢穴刷武器.png。
+// 来源：天埠罗巢穴刷武器最新脚本截图。
 // MacroStep 的格式是 {按住毫秒数、完整手柄报告、松开后等待毫秒数}；waitMs
 // 期间宏引擎会发送中立报告。Right/Up/Down/Left 均按原宏编辑器解释为左摇杆。
 constexpr MacroStep kSteps[] = {
-    {200, kReportX, 200}, {200, kReportA, 200}, {200, kReportA, 200},
+    {200, kReportX, 500}, {200, kReportA, 200}, {200, kReportA, 200},
     {200, kReportA, 200}, {5000, kNeutralReport, 4000},
-    {30000, kReportZR, 20}, {500, kReportZRWithRightStickPress, 20},
-    {11000, kReportZR, 3000}, {300, kLeftStickRight, 20},
-    {5500, kLeftStickUp, 20}, {1000, kLeftStickLeftWithZR, 20},
-    {1000, kLeftStickDown, 7000}, {200, kReportA, 1000},
+    {26000, kReportZR, 20}, {500, kReportZRWithRightStickPress, 20},
+    {8000, kReportZR, 3000}, {300, kLeftStickRight, 20},
+    {5000, kLeftStickUp, 20}, {1000, kLeftStickLeftWithZR, 20},
+    {2000, kLeftStickDown, 7000}, {200, kReportA, 1000},
     {200, kReportA, 1000}, {200, kReportA, 1000},
     {200, kReportA, 1000}, {200, kReportA, 2000},
     {200, kReportB, 1000},

@@ -9,13 +9,13 @@ export const BUILTIN_MACROS = Object.freeze([
     macro: {
       loopGapMs: 0, repeat: true,
       steps: [
-        step(200, 200, { buttons: 1 << 3 }), step(200, 200, { buttons: 1 << 2 }),
+        step(200, 500, { buttons: 1 << 3 }), step(200, 200, { buttons: 1 << 2 }),
         step(200, 200, { buttons: 1 << 2 }), step(200, 200, { buttons: 1 << 2 }),
-        step(5000, 4000), step(30000, 20, { buttons: 1 << 7 }),
+        step(5000, 4000), step(26000, 20, { buttons: 1 << 7 }),
         step(500, 20, { buttons: (1 << 7) | (1 << 11) }),
-        step(11000, 3000, { buttons: 1 << 7 }), step(300, 20, { leftX: 255 }),
-        step(5500, 20, { leftY: 0 }), step(1000, 20, { buttons: 1 << 7, leftX: 0 }),
-        step(1000, 7000, { leftY: 255 }), step(200, 1000, { buttons: 1 << 2 }),
+        step(8000, 3000, { buttons: 1 << 7 }), step(300, 20, { leftX: 255 }),
+        step(5000, 20, { leftY: 0 }), step(1000, 20, { buttons: 1 << 7, leftX: 0 }),
+        step(2000, 7000, { leftY: 255 }), step(200, 1000, { buttons: 1 << 2 }),
         step(200, 1000, { buttons: 1 << 2 }), step(200, 1000, { buttons: 1 << 2 }),
         step(200, 1000, { buttons: 1 << 2 }), step(200, 2000, { buttons: 1 << 2 }),
         step(200, 1000, { buttons: 1 << 1 }),
@@ -27,7 +27,7 @@ export const BUILTIN_MACROS = Object.freeze([
     macro: {
       loopGapMs: 0, repeat: true,
       steps: [
-        step(200, 200, { buttons: 1 << 3 }), step(200, 200, { buttons: 1 << 2 }),
+        step(200, 500, { buttons: 1 << 3 }), step(200, 200, { buttons: 1 << 2 }),
         step(200, 200, { buttons: 1 << 2 }), step(200, 200, { buttons: 1 << 2 }),
         step(5000, 4000), step(1000, 20, { leftX: 255 }), step(15000, 20, { leftY: 0 }),
         step(2000, 20, { buttons: 1 << 7, leftY: 0 }), step(200, 1500, { buttons: 1 << 3 }),
@@ -48,7 +48,7 @@ export const BUILTIN_MACROS = Object.freeze([
     macro: {
       loopGapMs: 0, repeat: true,
       steps: [
-        step(200, 200, { buttons: 1 << 3 }), step(200, 200, { leftY: 255 }),
+        step(200, 500, { buttons: 1 << 3 }), step(200, 200, { leftY: 255 }),
         step(200, 200, { leftY: 255 }), step(200, 200, { leftY: 255 }),
         step(200, 2000, { buttons: 1 << 2 }), step(200, 200, { leftX: 255 }),
         step(200, 2000, { buttons: 1 << 2 }), step(200, 1500, { buttons: 1 << 3 }),

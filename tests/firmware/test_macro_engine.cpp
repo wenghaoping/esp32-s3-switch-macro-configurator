@@ -28,7 +28,7 @@ uint32_t builtinDuration(const farmers::BuiltinMacroDefinition& macro) {
 void testBuiltinMacroMetadata() {
   const char* expectedNames[] = {"天埠罗巢穴刷武器", "杏棱巢穴刷钱", "武器分解", "连接手柄"};
   const size_t expectedSteps[] = {18, 26, 23, 1};
-  const uint32_t expectedDurations[] = {78200, 65600, 24500, 1000};
+  const uint32_t expectedDurations[] = {72000, 65900, 24800, 1000};
 
   assert(farmers::kBuiltinMacroCount == 4);
   for (uint8_t slot = 1; slot <= farmers::kBuiltinMacroCount; ++slot) {

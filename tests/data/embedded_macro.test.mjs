@@ -10,7 +10,7 @@ test("the frontend mirror exposes the four compiled board macros", () => {
   assert.deepEqual(BUILTIN_MACROS.map(({ macro }) => macro.steps.length), [18, 26, 23, 1]);
   assert.deepEqual(BUILTIN_MACROS.map(({ macro }) => macro.steps.reduce(
     (total, step) => total + step.durationMs + step.waitMs, 0,
-  )), [78200, 65600, 24500, 1000]);
+  )), [72000, 65900, 24800, 1000]);
 
   const weaponFarm = BUILTIN_MACROS[0].macro.steps;
   assert.equal(weaponFarm[6].buttons, (1 << 7) | (1 << 11));

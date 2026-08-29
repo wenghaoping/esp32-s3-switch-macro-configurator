@@ -10,7 +10,7 @@ namespace {
 // 来源：武器分解.jpg。重复的 A/向右动作刻意保留为独立步骤，方便学习时逐项
 // 对照截图，也能分别调整每一次松开后的等待时间。
 constexpr MacroStep kSteps[] = {
-    {200, kReportX, 200}, {200, kLeftStickDown, 200},
+    {200, kReportX, 500}, {200, kLeftStickDown, 200},
     {200, kLeftStickDown, 200}, {200, kLeftStickDown, 200},
     {200, kReportA, 2000}, {200, kLeftStickRight, 200},
     {200, kReportA, 2000}, {200, kReportX, 1500},

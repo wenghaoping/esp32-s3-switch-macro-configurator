@@ -10,7 +10,7 @@ namespace {
 // 来源：杏棱巢穴刷钱.jpg。方向沿用原编辑器的左摇杆方向；waitMs 精确保留
 // 截图中“释放并等待”的时长。
 constexpr MacroStep kSteps[] = {
-    {200, kReportX, 200}, {200, kReportA, 200}, {200, kReportA, 200},
+    {200, kReportX, 500}, {200, kReportA, 200}, {200, kReportA, 200},
     {200, kReportA, 200}, {5000, kNeutralReport, 4000},
     {1000, kLeftStickRight, 20}, {15000, kLeftStickUp, 20},
     {2000, kLeftStickUpWithZR, 20}, {200, kReportX, 1500},
