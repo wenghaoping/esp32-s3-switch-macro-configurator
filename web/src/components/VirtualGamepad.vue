@@ -1,5 +1,5 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { controlForKey, DEFAULT_KEY_BINDINGS, keyLabel } from "../utils/manual-input.js";
 
 const props = defineProps({
@@ -8,9 +8,11 @@ const props = defineProps({
   editorLayout: Boolean,
   selectable: Boolean,
   modelValue: { type: Array, default: () => [] },
+  externalControls: { type: Array, default: () => [] },
 });
 const emit = defineEmits(["change", "update:modelValue"]);
 const active = ref(new Set(props.modelValue));
+const displayedActive = computed(() => new Set([...active.value, ...props.externalControls]));
 const pressedKeys = new Map();
 
 const shouldersLeft = [["ZL","ZL"],["L","L"]];
@@ -81,26 +83,26 @@ defineExpose({ clear });
   <section class="switch-controller" :class="{ compact, selectable, 'editor-layout': editorLayout }" @pointerleave="clear">
     <div class="shoulder-strip">
       <div class="shoulder-pair">
-        <button v-for="item in shouldersLeft" :key="item[1]" class="pad-key shoulder-key" :class="{ pressed: active.has(item[1]) }" :disabled="disabled" @pointerdown.prevent="press(item[1])" @pointerup.prevent="release(item[1])" @pointercancel="release(item[1])"><span>{{ item[0] }}</span><kbd>{{ binding(item[1]) }}</kbd></button>
+        <button v-for="item in shouldersLeft" :key="item[1]" class="pad-key shoulder-key" :class="{ pressed: displayedActive.has(item[1]) }" :disabled="disabled" @pointerdown.prevent="press(item[1])" @pointerup.prevent="release(item[1])" @pointercancel="release(item[1])"><span>{{ item[0] }}</span><kbd>{{ binding(item[1]) }}</kbd></button>
       </div>
       <div class="shoulder-pair">
-        <button v-for="item in shouldersRight" :key="item[1]" class="pad-key shoulder-key" :class="{ pressed: active.has(item[1]) }" :disabled="disabled" @pointerdown.prevent="press(item[1])" @pointerup.prevent="release(item[1])" @pointercancel="release(item[1])"><span>{{ item[0] }}</span><kbd>{{ binding(item[1]) }}</kbd></button>
+        <button v-for="item in shouldersRight" :key="item[1]" class="pad-key shoulder-key" :class="{ pressed: displayedActive.has(item[1]) }" :disabled="disabled" @pointerdown.prevent="press(item[1])" @pointerup.prevent="release(item[1])" @pointercancel="release(item[1])"><span>{{ item[0] }}</span><kbd>{{ binding(item[1]) }}</kbd></button>
       </div>
     </div>
 
     <div class="controller-shell">
-      <div class="pad-cluster"><b>移动 / 十字键</b><div class="control-diamond"><button v-for="(item,index) in dpad" :key="item[1]" class="pad-key round-key" :class="[`position-${index}`,{ pressed:active.has(item[1]) }]" :disabled="disabled" @pointerdown.prevent="press(item[1])" @pointerup.prevent="release(item[1])" @pointercancel="release(item[1])"><span>{{ item[0] }}</span><kbd>{{ binding(item[1]) }}</kbd></button><i>＋</i></div></div>
-      <div v-if="editorLayout" class="pad-cluster inline-stick"><b>左摇杆</b><div class="control-diamond stick-diamond"><button v-for="(item,index) in leftStick" :key="item[1]" class="pad-key round-key" :class="[`position-${index}`,{ pressed:active.has(item[1]) }]" :disabled="disabled" @pointerdown.prevent="press(item[1])" @pointerup.prevent="release(item[1])" @pointercancel="release(item[1])"><span>{{ item[0] }}</span><kbd>{{ binding(item[1]) }}</kbd></button><i>L</i></div></div>
+      <div class="pad-cluster"><b>移动 / 十字键</b><div class="control-diamond"><button v-for="(item,index) in dpad" :key="item[1]" class="pad-key round-key" :class="[`position-${index}`,{ pressed:displayedActive.has(item[1]) }]" :disabled="disabled" @pointerdown.prevent="press(item[1])" @pointerup.prevent="release(item[1])" @pointercancel="release(item[1])"><span>{{ item[0] }}</span><kbd>{{ binding(item[1]) }}</kbd></button><i>＋</i></div></div>
+      <div v-if="editorLayout" class="pad-cluster inline-stick"><b>左摇杆</b><div class="control-diamond stick-diamond"><button v-for="(item,index) in leftStick" :key="item[1]" class="pad-key round-key" :class="[`position-${index}`,{ pressed:displayedActive.has(item[1]) }]" :disabled="disabled" @pointerdown.prevent="press(item[1])" @pointerup.prevent="release(item[1])" @pointercancel="release(item[1])"><span>{{ item[0] }}</span><kbd>{{ binding(item[1]) }}</kbd></button><i>L</i></div></div>
       <div class="controller-center">
         <span class="switch-logo">功能键</span>
-        <div class="utility-grid"><button v-for="item in utility" :key="item[1]" class="pad-key utility-key" :class="{ pressed:active.has(item[1]) }" :disabled="disabled" @pointerdown.prevent="press(item[1])" @pointerup.prevent="release(item[1])" @pointercancel="release(item[1])"><span>{{ item[0] }}</span><kbd>{{ binding(item[1]) }}</kbd></button></div>
+        <div class="utility-grid"><button v-for="item in utility" :key="item[1]" class="pad-key utility-key" :class="{ pressed:displayedActive.has(item[1]) }" :disabled="disabled" @pointerdown.prevent="press(item[1])" @pointerup.prevent="release(item[1])" @pointercancel="release(item[1])"><span>{{ item[0] }}</span><kbd>{{ binding(item[1]) }}</kbd></button></div>
       </div>
-      <div v-if="editorLayout" class="pad-cluster inline-stick"><b>右摇杆</b><div class="control-diamond stick-diamond"><button v-for="(item,index) in rightStick" :key="item[1]" class="pad-key round-key" :class="[`position-${index}`,{ pressed:active.has(item[1]) }]" :disabled="disabled" @pointerdown.prevent="press(item[1])" @pointerup.prevent="release(item[1])" @pointercancel="release(item[1])"><span>{{ item[0] }}</span><kbd>{{ binding(item[1]) }}</kbd></button><i>R</i></div></div>
-      <div class="pad-cluster"><b>动作 / ABXY</b><div class="control-diamond face-diamond"><button v-for="(item,index) in face" :key="item[1]" class="pad-key round-key face-key" :class="[`position-${index}`,`face-${item[0].toLowerCase()}`,{ pressed:active.has(item[1]) }]" :disabled="disabled" @pointerdown.prevent="press(item[1])" @pointerup.prevent="release(item[1])" @pointercancel="release(item[1])"><span>{{ item[0] }}</span><kbd>{{ binding(item[1]) }}</kbd></button><i>●</i></div></div>
+      <div v-if="editorLayout" class="pad-cluster inline-stick"><b>右摇杆</b><div class="control-diamond stick-diamond"><button v-for="(item,index) in rightStick" :key="item[1]" class="pad-key round-key" :class="[`position-${index}`,{ pressed:displayedActive.has(item[1]) }]" :disabled="disabled" @pointerdown.prevent="press(item[1])" @pointerup.prevent="release(item[1])" @pointercancel="release(item[1])"><span>{{ item[0] }}</span><kbd>{{ binding(item[1]) }}</kbd></button><i>R</i></div></div>
+      <div class="pad-cluster"><b>动作 / ABXY</b><div class="control-diamond face-diamond"><button v-for="(item,index) in face" :key="item[1]" class="pad-key round-key face-key" :class="[`position-${index}`,`face-${item[0].toLowerCase()}`,{ pressed:displayedActive.has(item[1]) }]" :disabled="disabled" @pointerdown.prevent="press(item[1])" @pointerup.prevent="release(item[1])" @pointercancel="release(item[1])"><span>{{ item[0] }}</span><kbd>{{ binding(item[1]) }}</kbd></button><i>●</i></div></div>
     </div>
     <div v-if="!editorLayout" class="stick-bank">
-      <div class="pad-cluster"><b>左摇杆</b><div class="control-diamond stick-diamond"><button v-for="(item,index) in leftStick" :key="item[1]" class="pad-key round-key" :class="[`position-${index}`,{ pressed:active.has(item[1]) }]" :disabled="disabled" @pointerdown.prevent="press(item[1])" @pointerup.prevent="release(item[1])" @pointercancel="release(item[1])"><span>{{ item[0] }}</span><kbd>{{ binding(item[1]) }}</kbd></button><i>L</i></div></div>
-      <div class="pad-cluster"><b>右摇杆</b><div class="control-diamond stick-diamond"><button v-for="(item,index) in rightStick" :key="item[1]" class="pad-key round-key" :class="[`position-${index}`,{ pressed:active.has(item[1]) }]" :disabled="disabled" @pointerdown.prevent="press(item[1])" @pointerup.prevent="release(item[1])" @pointercancel="release(item[1])"><span>{{ item[0] }}</span><kbd>{{ binding(item[1]) }}</kbd></button><i>R</i></div></div>
+      <div class="pad-cluster"><b>左摇杆</b><div class="control-diamond stick-diamond"><button v-for="(item,index) in leftStick" :key="item[1]" class="pad-key round-key" :class="[`position-${index}`,{ pressed:displayedActive.has(item[1]) }]" :disabled="disabled" @pointerdown.prevent="press(item[1])" @pointerup.prevent="release(item[1])" @pointercancel="release(item[1])"><span>{{ item[0] }}</span><kbd>{{ binding(item[1]) }}</kbd></button><i>L</i></div></div>
+      <div class="pad-cluster"><b>右摇杆</b><div class="control-diamond stick-diamond"><button v-for="(item,index) in rightStick" :key="item[1]" class="pad-key round-key" :class="[`position-${index}`,{ pressed:displayedActive.has(item[1]) }]" :disabled="disabled" @pointerdown.prevent="press(item[1])" @pointerup.prevent="release(item[1])" @pointercancel="release(item[1])"><span>{{ item[0] }}</span><kbd>{{ binding(item[1]) }}</kbd></button><i>R</i></div></div>
     </div>
     <p class="controller-help">{{ selectable ? '点击图中的 Switch 按键来设置这个动作；黄色表示已选中。' : '按住图中按钮或使用键盘；支持组合输入，松开后立即释放。' }}</p>
   </section>

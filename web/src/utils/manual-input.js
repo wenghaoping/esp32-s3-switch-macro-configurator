@@ -217,6 +217,24 @@ export function buildManualReport(activeControls) {
   };
 }
 
+export function normalizeControllerReport(report = {}) {
+  const clampAxis = (value) => Math.max(0, Math.min(255, Math.round(Number(value) || 0)));
+  const dpad = Number(report.dpad);
+  return {
+    buttons: (Number(report.buttons) || 0) & 0x3fff,
+    dpad: dpad >= 0 && dpad <= 7 ? dpad : 15,
+    leftX: clampAxis(report.leftX ?? 128),
+    leftY: clampAxis(report.leftY ?? 128),
+    rightX: clampAxis(report.rightX ?? 128),
+    rightY: clampAxis(report.rightY ?? 128),
+  };
+}
+
+export function controllerReportCommand(report) {
+  const normalized = normalizeControllerReport(report);
+  return `R ${normalized.buttons} ${normalized.dpad} ${normalized.leftX} ${normalized.leftY} ${normalized.rightX} ${normalized.rightY}`;
+}
+
 export function controlsForReport(report = {}) {
   const controls = [];
   const buttons = Number(report.buttons) || 0;

@@ -1,9 +1,32 @@
-import { buildManualReport } from "./manual-input.js";
+import { buildManualReport, normalizeControllerReport } from "./manual-input.js";
 import { MIN_STEP_DURATION_MS } from "./macro-editor.js";
+import {
+  DEFAULT_AXIS_CHANGE_THRESHOLD,
+  DEFAULT_AXIS_QUANTUM,
+  normalizeRightStickPulseStep,
+  optimizeMacroSteps,
+  quantizeMacroStep,
+} from "./macro-optimizer.js";
 
-function reportStep(activeControls, durationMs = 0) {
+export const RECORDER_MODES = Object.freeze({
+  PRECISE: "precise",
+  RIGHT_STICK_PULSE: "right-stick-pulse",
+});
+
+function normalizeRecorderMode(mode) {
+  return mode === RECORDER_MODES.RIGHT_STICK_PULSE
+    ? RECORDER_MODES.RIGHT_STICK_PULSE
+    : RECORDER_MODES.PRECISE;
+}
+
+function reportStep(activeControls, durationMs = 0, mode = RECORDER_MODES.PRECISE) {
   const report = buildManualReport(activeControls);
-  return {
+  return reportStepFromReport(report, durationMs, mode);
+}
+
+function reportStepFromReport(inputReport, durationMs = 0, mode = RECORDER_MODES.PRECISE) {
+  const report = normalizeControllerReport(inputReport);
+  const step = quantizeMacroStep({
     durationMs,
     waitMs: 0,
     buttons: report.buttons,
@@ -12,7 +35,10 @@ function reportStep(activeControls, durationMs = 0) {
     leftY: report.leftY,
     rightX: report.rightX,
     rightY: report.rightY,
-  };
+  }, DEFAULT_AXIS_QUANTUM);
+  return mode === RECORDER_MODES.RIGHT_STICK_PULSE
+    ? normalizeRightStickPulseStep(step)
+    : step;
 }
 
 function isNeutral(step) {
@@ -37,26 +63,58 @@ function sameInput(left, right) {
   );
 }
 
+function sameDigitalInput(left, right) {
+  return left.buttons === right.buttons && left.dpad === right.dpad;
+}
+
+function axisDistance(left, right) {
+  return Math.max(
+    Math.abs(left.leftX - right.leftX),
+    Math.abs(left.leftY - right.leftY),
+    Math.abs(left.rightX - right.rightX),
+    Math.abs(left.rightY - right.rightY),
+  );
+}
+
 export class MacroRecorder {
-  constructor() {
+  constructor({ mode = RECORDER_MODES.PRECISE } = {}) {
+    this.mode = normalizeRecorderMode(mode);
     this.reset();
+  }
+
+  setMode(mode) {
+    if (this.recording) return false;
+    this.mode = normalizeRecorderMode(mode);
+    return true;
   }
 
   start(activeControls, now) {
     this.reset();
     this.recording = true;
-    this.lastStep = reportStep(activeControls);
+    this.lastStep = Array.isArray(activeControls)
+      ? reportStep(activeControls, 0, this.mode)
+      : reportStepFromReport(activeControls, 0, this.mode);
     this.lastChangedAt = now;
     this.startedAt = now;
     this.hasInput = !isNeutral(this.lastStep);
   }
 
   change(activeControls, now) {
+    this.changeReport(buildManualReport(activeControls), now);
+  }
+
+  changeReport(report, now) {
     if (!this.recording) {
       return;
     }
-    const nextStep = reportStep(activeControls);
+    const nextStep = reportStepFromReport(report, 0, this.mode);
     if (sameInput(this.lastStep, nextStep)) {
+      return;
+    }
+    if (
+      sameDigitalInput(this.lastStep, nextStep) &&
+      axisDistance(this.lastStep, nextStep) < DEFAULT_AXIS_CHANGE_THRESHOLD
+    ) {
       return;
     }
     if (this.hasInput) {
@@ -84,7 +142,7 @@ export class MacroRecorder {
         actions.push({ ...step, waitMs: 0 });
       }
     }
-    return actions;
+    return optimizeMacroSteps(actions);
   }
 
   cancel() {

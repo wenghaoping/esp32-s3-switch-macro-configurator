@@ -5,7 +5,7 @@ import { MockSerialTransport, SerialTransport } from "../utils/serial-transport.
 import { buildMacroUploadCommands, normalizeMacro } from "../utils/macro-editor.js";
 import { BUILTIN_MACROS } from "../utils/builtin-macros.js";
 import { buildTaskUploadCommands, normalizeTaskPlan } from "../utils/task-plan.js";
-import { buildManualReport } from "../utils/manual-input.js";
+import { buildManualReport, controllerReportCommand } from "../utils/manual-input.js";
 import { buildTriggerUploadCommands } from "../utils/library-manager.js";
 import { MACRO_SLOT_COUNT } from "../utils/slot-config.js";
 
@@ -229,7 +229,8 @@ export const useDeviceStore = defineStore("device", () => {
     await sendAndWait("STOP", (message) => ["status", "error"].includes(message?.type));
     notify("已停止当前宏并释放全部按键。");
   }
-  async function manual(controls) { await send(buildManualReport(controls).command); }
+  async function manual(controls) { await manualReport(buildManualReport(controls)); }
+  async function manualReport(report) { await send(controllerReportCommand(report)); }
 
   async function loadMacro(slot) {
     return sendAndWait(`MACRO_LOAD ${slot}`, (message) => ["macro", "error"].includes(message?.type));
@@ -291,7 +292,7 @@ export const useDeviceStore = defineStore("device", () => {
   return {
     connected, ready, connecting, error, notification, status, slots, taskPlan, triggerConfig,
     running, activeName, connect, disconnect, send, refreshAll, runSlot,
-    runTask, stop, manual, loadMacro, saveMacro, restoreMacro, deleteMacro,
+    runTask, stop, manual, manualReport, loadMacro, saveMacro, restoreMacro, deleteMacro,
     saveTask, deleteTask, saveTriggers, notify,
   };
 });
