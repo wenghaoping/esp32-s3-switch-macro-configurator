@@ -28,6 +28,7 @@ export const useDeviceStore = defineStore("device", () => {
   const error = ref("");
   const notification = ref(null);
   const status = ref({ state: "idle", name: "", source: "empty", step: 0, steps: 0 });
+  const macroStorageStatus = ref("unknown");
   const slots = ref(Array.from({ length: MACRO_SLOT_COUNT }, (_, slot) => initialSlot(slot)));
   const taskPlan = ref(null);
   const triggerConfig = ref(null);
@@ -79,7 +80,13 @@ export const useDeviceStore = defineStore("device", () => {
         stopPolling();
       }
     }
-    if (message.type === "macro_list") slots.value = message.slots.map((slot, index) => ({ ...emptySlot(index), ...slot, confirmed: true }));
+    if (message.type === "macro_list") {
+      slots.value = message.slots.map((slot, index) => ({ ...emptySlot(index), ...slot, confirmed: true }));
+      if (message.macro_storage) macroStorageStatus.value = message.macro_storage;
+    }
+    if ((message.type === "info" || message.type === "status") && message.macro_storage) {
+      macroStorageStatus.value = message.macro_storage;
+    }
     if (message.type === "task_plan") taskPlan.value = message.available ? normalizeTaskPlan(message) : null;
     if (message.type === "trigger_config") triggerConfig.value = message;
   }
@@ -260,6 +267,10 @@ export const useDeviceStore = defineStore("device", () => {
     await sendAndWait(`MACRO_DELETE ${slot}`, (message) => ["macro_list", "error"].includes(message?.type));
     notify(`槽位 ${slot + 1} 的宏已删除。`);
   }
+  async function resetMacroStorage() {
+    await sendAndWait("MACRO_STORAGE_RESET", (message) => ["macro_list", "error"].includes(message?.type), 30000);
+    notify("宏存储已清空并重新初始化。", "success");
+  }
 
   async function saveTask(plan) {
     await send("MACRO_LIST");
@@ -290,9 +301,9 @@ export const useDeviceStore = defineStore("device", () => {
   }
 
   return {
-    connected, ready, connecting, error, notification, status, slots, taskPlan, triggerConfig,
+    connected, ready, connecting, error, notification, status, slots, taskPlan, triggerConfig, macroStorageStatus,
     running, activeName, connect, disconnect, send, refreshAll, runSlot,
-    runTask, stop, manual, manualReport, loadMacro, saveMacro, restoreMacro, deleteMacro,
+    runTask, stop, manual, manualReport, loadMacro, saveMacro, restoreMacro, deleteMacro, resetMacroStorage,
     saveTask, deleteTask, saveTriggers, notify,
   };
 });
@@ -304,6 +315,9 @@ function translateError(code = "") {
     "task-commit-invalid": "宏循环校验或保存失败。",
     "macro-slot-empty": "选择的宏槽位为空。",
     "macro-running": "宏正在运行，请先停止。",
+    "task-running": "宏循环正在运行，请先停止。",
+    "macro-storage-reset-busy": "当前仍有宏、任务或配置上传在进行，请停止后再清空宏存储。",
+    "macro-storage-reset-failed": "宏存储清空失败，固件没有自动清除数据。",
   };
   if (code === "设备拒绝了这条指令") return "设备返回 ERR：当前网页与固件协议不一致，请重新烧录当前 2.0 固件。";
   return messages[code] || code || "设备拒绝了这条指令。";

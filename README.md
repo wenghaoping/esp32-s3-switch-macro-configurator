@@ -200,6 +200,7 @@ npm run serve
 | `MACRO_GET` / `MACRO_LIST` | 读取当前宏，或读取 12 个槽位与当前槽位信息 |
 | `MACRO_BEGIN` / `MACRO_STEP` / `MACRO_COMMIT` | 事务式上传、校验并保存一个宏 |
 | `MACRO_LOAD` / `MACRO_DELETE` / `MACRO_RESTORE` | 切换、删除网页脚本，或恢复 C++ 内置脚本 |
+| `MACRO_STORAGE_RESET` | 仅在网页明确确认后，清空宏 SPIFFS 并重新初始化；启动时不会自动执行 |
 | `TRIGGER_GET` / `TRIGGER_DEFAULT` | 读取或恢复 GPIO 离线触发配置 |
 | `TRIGGER_BEGIN` / `TRIGGER_ENTRY` / `TRIGGER_STOP_PIN` / `TRIGGER_COMMIT` | 事务式保存 GPIO 触发配置 |
 | `TASK_GET` / `TASK_START` / `TASK_STOP` / `TASK_DELETE` | 读取、运行、停止或删除板载任务方案 |

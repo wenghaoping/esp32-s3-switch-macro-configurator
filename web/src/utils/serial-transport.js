@@ -253,6 +253,7 @@ export class MockSerialTransport {
     this.lastReport = null;
     this.macro = structuredClone(BUILTIN_MACROS[0].macro);
     this.source = "builtin";
+    this.macroStorageStatus = "ready";
     this.stagedMacro = null;
     this.builtinMacros = BUILTIN_MACROS.map(({ macro }) => structuredClone(macro));
     this.slots = Array.from({ length: MACRO_SLOT_COUNT }, (_, slot) => this.builtinMacros[slot] ? {
@@ -290,6 +291,7 @@ export class MockSerialTransport {
     // Keep the mock aligned with the firmware: inspecting list/status is safe
     // while a board macro runs, but configuration commands must never stop it.
     const macroConfigurationCommand = command === "MACRO_DEFAULT" ||
+      command === "MACRO_STORAGE_RESET" ||
       /^(MACRO_RESTORE|MACRO_BEGIN|MACRO_LOAD|MACRO_DELETE|MACRO_RENAME|MACRO_NAME|MACRO_STEP|MACRO_COMMIT)(?:\s|$)/.test(command);
     if (this.state === "running" && macroConfigurationCommand) {
       this.stagedMacro = null;
@@ -330,6 +332,21 @@ export class MockSerialTransport {
       }
       this.emitMacro();
     } else if (command === "MACRO_LIST") {
+      this.emitMacroList();
+    } else if (command === "MACRO_STORAGE_RESET") {
+      this.slots = this.slots.map((slot, index) => this.builtinMacros[index] ? {
+        ...slot,
+        occupied: true,
+        source: "builtin",
+        has_builtin: true,
+        has_stored: false,
+        name: BUILTIN_MACROS[index].name,
+      } : { slot: index, occupied: false, source: "empty", has_builtin: false, has_stored: false });
+      this.slotMacros = this.builtinMacros.map((macro) => macro ? structuredClone(macro) : null);
+      this.activeSlot = 0;
+      this.source = "builtin";
+      this.macro = structuredClone(this.slotMacros[0]);
+      this.macroStorageStatus = "ready";
       this.emitMacroList();
     } else if (command === "TRIGGER_GET") {
       this.onLine(JSON.stringify(this.triggerConfig));
@@ -686,6 +703,7 @@ export class MockSerialTransport {
     this.onLine(JSON.stringify({
       type: "macro_list",
       ok: true,
+      macro_storage: this.macroStorageStatus,
       active_slot: this.activeSlot,
       slots: this.slots,
     }));

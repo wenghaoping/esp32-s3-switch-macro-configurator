@@ -225,6 +225,7 @@ The control link is `115200 baud`, ASCII, one command per line.
 | `MACRO_LOAD slot` | Stop and load one saved slot as the active macro |
 | `MACRO_DELETE slot` | Stop and delete one saved slot |
 | `MACRO_RESTORE slot` | Delete a Flash override and restore the slot's C++ built-in macro |
+| `MACRO_STORAGE_RESET` | Explicitly clear and reinitialize macro SPIFFS; never run automatically at boot |
 | `TASK_GET` / `TASK_START` / `TASK_STOP` / `TASK_DELETE` | Read, run, stop, or delete the board task plan |
 | `TASK_BEGIN 5` / `TASK_META` / `TASK_ENTRY` / `TASK_COMMIT` | Transactionally save up to five complete-script task items |
 | `TRIGGER_GET` / `TRIGGER_DEFAULT` | Read the GPIO trigger configuration or restore defaults |

@@ -502,6 +502,7 @@ void emitState(const char* type) {
       currentStep == nullptr ? farmers::kNeutralReport : currentStep->report;
   ATT_CONTROL_SERIAL.printf(
       "{\"type\":\"%s\",\"ok\":true,\"firmware\":\"%s\","
+      "\"macro_storage\":\"%s\","
       "\"routine\":\"material-farm\",\"source\":\"%s\",\"state\":\"%s\","
       "\"phase\":\"%s\",\"step\":%u,\"steps\":%u,\"cycle\":%lu,"
       "\"duration_ms\":%lu,\"loop_gap_ms\":%lu,\"cycle_ms\":%lu,"
@@ -514,7 +515,7 @@ void emitState(const char* type) {
       "\"repeat\":%s,\"slot\":%d,\"active_slot\":%d,"
       "\"running_slot\":%d,\"last_trigger\":%d,"
       "\"trigger_state\":\"%s\",\"stop_pin\":%u,\"name\":",
-      type, kFirmwareVersion, activeMacroSource(),
+      type, kFirmwareVersion, MacroLibrary.storageStatus(), activeMacroSource(),
       (Macro.running() || TaskActive) ? "running" : "idle",
       phaseName(Macro.phase()), static_cast<unsigned int>(visibleStep),
       static_cast<unsigned int>(ActiveMacro.stepCount),
@@ -625,9 +626,10 @@ void emitMacro() {
 void emitMacroList() {
   // 返回十二个槽位摘要。Flash 保存版本优先显示，否则显示 C++ 内置版本。
   ATT_CONTROL_SERIAL.printf(
-      "{\"type\":\"macro_list\",\"ok\":true,\"active_slot\":%d,"
+      "{\"type\":\"macro_list\",\"ok\":true,\"macro_storage\":\"%s\","
+      "\"active_slot\":%d,"
       "\"slots\":[",
-      static_cast<int>(ActiveMacroSlot));
+      MacroLibrary.storageStatus(), static_cast<int>(ActiveMacroSlot));
   for (uint8_t slot = 0; slot < farmers::kMacroLibrarySlotCount; ++slot) {
     if (slot > 0) {
       ATT_CONTROL_SERIAL.print(',');
@@ -1316,7 +1318,8 @@ bool handleMacroCommand(char* line) {
        strncmp(line, "MACRO_BEGIN", 11) == 0 ||
        strncmp(line, "MACRO_LOAD", 10) == 0 ||
        strncmp(line, "MACRO_DELETE", 12) == 0 ||
-       strncmp(line, "MACRO_RENAME", 12) == 0)) {
+       strncmp(line, "MACRO_RENAME", 12) == 0 ||
+       strcmp(line, "MACRO_STORAGE_RESET") == 0)) {
     emitError("task-running");
     return true;
   }
@@ -1332,7 +1335,8 @@ bool handleMacroCommand(char* line) {
        strncmp(line, "MACRO_RENAME", 12) == 0 ||
        strncmp(line, "MACRO_NAME", 10) == 0 ||
        strncmp(line, "MACRO_STEP", 10) == 0 ||
-       strncmp(line, "MACRO_COMMIT", 12) == 0)) {
+       strncmp(line, "MACRO_COMMIT", 12) == 0 ||
+       strcmp(line, "MACRO_STORAGE_RESET") == 0)) {
     MacroUploadActive = false;
     emitError("macro-running");
     return true;
@@ -1349,6 +1353,39 @@ bool handleMacroCommand(char* line) {
   }
   if (strcmp(line, "MACRO_LIST") == 0) {
     emitMacroList();
+    return true;
+  }
+  if (strcmp(line, "MACRO_STORAGE_RESET") == 0) {
+    // 格式化是破坏性操作：运行中、上传中一律拒绝。启动时永远不会自动走到这里。
+    if (Macro.running() || TaskActive || MacroUploadActive ||
+        TaskUploadActive || TriggerUploadActive) {
+      emitError("macro-storage-reset-busy");
+      return true;
+    }
+
+    Macro.stop();
+    flushMacroReport();
+    MacroUploadActive = false;
+    StatusLed.startFlashWrite();
+    const bool taskCleared = TaskStore.clear();
+    const bool storageReset = taskCleared && MacroLibrary.resetStorage();
+    StatusLed.finishFlashWrite(storageReset);
+    if (!storageReset) {
+      emitError("macro-storage-reset-failed");
+      return true;
+    }
+
+    // 清空宏库后，旧任务方案和 GPIO 目标可能引用已不存在的自定义槽位。
+    SavedTaskPlan = {};
+    TaskPlanAvailable = false;
+    loadActiveMacro();
+    loadTriggerConfig();
+    setupTriggerPins();
+    emitMacro();
+    emitMacroList();
+    emitTaskPlan();
+    emitTriggerConfig();
+    emitState("status");
     return true;
   }
   if (strcmp(line, "MACRO_DEFAULT") == 0) {

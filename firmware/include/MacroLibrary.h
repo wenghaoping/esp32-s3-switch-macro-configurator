@@ -30,6 +30,7 @@ class MacroLibrary {
   // 挂载 SPIFFS，并扫描十二个槽位的 Flash 文件。
   bool begin();
   bool available() const;
+  const char* storageStatus() const;
   bool hasAnyMacro() const;
   int8_t activeSlot() const;
   const MacroSlotInfo& slotInfo(uint8_t slot) const;
@@ -38,6 +39,8 @@ class MacroLibrary {
   bool load(uint8_t slot, UserMacro* macro, MacroSlotInfo* info = nullptr);
   bool save(uint8_t slot, const char* name, const UserMacro& macro);
   bool erase(uint8_t slot);
+  // 仅由用户显式发起；清空宏库后重新挂载，但不会在 begin() 中自动调用。
+  bool resetStorage();
   // 记录上次选择的 Flash 槽位；-1 表示当前使用内置宏或默认宏。
   bool setActive(int8_t slot);
 

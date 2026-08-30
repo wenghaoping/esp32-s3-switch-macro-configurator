@@ -161,7 +161,9 @@ void assignSlotInfo(MacroSlotInfo* info, const StoredLibraryMacro& stored) {
 
 bool MacroLibrary::begin() {
   // 启动时重建内存摘要；Flash 文件本身仍保持按需读取。
-  mounted_ = SPIFFS.begin(true);
+  // 严禁在启动路径自动格式化。突然断电、分区配置错误或文件系统损坏时，
+  // 保留现场并让上层回退到 C++ 内置宏，等待用户明确确认后再 resetStorage()。
+  mounted_ = SPIFFS.begin(false);
   activeSlot_ = -1;
   for (MacroSlotInfo& slot : slots_) {
     clearSlotInfo(&slot);
@@ -192,6 +194,10 @@ bool MacroLibrary::begin() {
 
 bool MacroLibrary::available() const {
   return mounted_;
+}
+
+const char* MacroLibrary::storageStatus() const {
+  return mounted_ ? "ready" : "mount-failed";
 }
 
 bool MacroLibrary::hasAnyMacro() const {
@@ -275,6 +281,25 @@ bool MacroLibrary::erase(uint8_t slot) {
   }
   clearSlotInfo(&slots_[slot]);
   return true;
+}
+
+bool MacroLibrary::resetStorage() {
+  // 这是唯一允许格式化宏 SPIFFS 的入口，必须由用户通过明确的网页操作触发。
+  // 先卸载再格式化，避免在仍有文件句柄时破坏挂载状态。
+  if (mounted_) {
+    SPIFFS.end();
+  }
+  mounted_ = false;
+  activeSlot_ = -1;
+  for (MacroSlotInfo& slot : slots_) {
+    clearSlotInfo(&slot);
+  }
+
+  if (!SPIFFS.format()) {
+    return false;
+  }
+  mounted_ = SPIFFS.begin(false);
+  return mounted_;
 }
 
 bool MacroLibrary::setActive(int8_t slot) {

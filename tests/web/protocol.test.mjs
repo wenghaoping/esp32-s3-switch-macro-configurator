@@ -107,6 +107,8 @@ test("browsing macro settings never stops a running macro", async () => {
   assert.equal(lines.at(-1).message, "macro-running");
   await transport.send("MACRO_BEGIN 0 1 0 1");
   assert.equal(lines.at(-1).message, "macro-running");
+  await transport.send("MACRO_STORAGE_RESET");
+  assert.equal(lines.at(-1).message, "macro-running");
   await transport.send("STATUS");
   assert.equal(lines.at(-1).state, "running");
   assert.equal(transport.activeSlot, 2);
@@ -194,6 +196,12 @@ test("mock transport saves and reloads a named macro library transaction", async
   const library = lines.filter((line) => line.type === "macro_list").at(-1);
   assert.equal(library.active_slot, 2);
   assert.equal(library.slots[2].name, "Test route");
+
+  await transport.send("MACRO_STORAGE_RESET");
+  const resetLibrary = lines.filter((line) => line.type === "macro_list").at(-1);
+  assert.equal(resetLibrary.macro_storage, "ready");
+  assert.equal(resetLibrary.slots[2].source, "builtin");
+  assert.equal(resetLibrary.slots[2].has_stored, false);
 });
 
 test("mock transport persists and starts a five-entry board task plan", async () => {

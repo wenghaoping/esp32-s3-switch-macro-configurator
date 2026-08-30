@@ -7,6 +7,7 @@ const device = useDeviceStore();
 const draft = ref(createDefaultTaskPlan(device.slots));
 const message = ref(""); const saving = ref(false);
 const sourceLabel = (slot) => !slot.confirmed && slot.source === "builtin" ? "新版固件内置 · 待设备确认" : ({ builtin: "C++ 内置", stored: "Flash 保存", empty: "空槽位" }[slot.source] || slot.source);
+const storageNeedsReset = computed(() => device.macroStorageStatus === "mount-failed");
 const referenced = computed(() => new Set(draft.value.entries.map((entry) => entry.slot)));
 const description = computed(() => describeTaskPlan(draft.value, device.slots));
 watch(() => device.taskPlan, (value) => { if (value) draft.value = normalizeTaskPlan(value); }, { immediate: true });
@@ -14,6 +15,7 @@ function addEntry() { const slot = device.slots.find((item) => item.occupied && 
 function removeEntry(index) { draft.value.entries.splice(index, 1); }
 function moveEntry(index, offset) { const target = index + offset; if (target < 0 || target >= draft.value.entries.length) return; const [entry] = draft.value.entries.splice(index, 1); draft.value.entries.splice(target, 0, entry); }
 async function save() { const errors = validateTaskPlan(draft.value, device.slots); if (errors.length) { message.value = errors[0]; return; } saving.value = true; message.value = "正在写入开发板…"; try { await device.saveTask(draft.value); message.value = "宏循环已保存到 ESP32。"; } catch (error) { message.value = error.message; } finally { saving.value = false; } }
+async function resetMacroStorage() { if (!confirm("宏存储挂载失败。清空并重新初始化会删除全部自定义宏和宏循环，内置宏不会删除。确定继续吗？")) return; try { await device.resetMacroStorage(); message.value = "宏存储已重新初始化，请重新保存自定义宏。"; } catch (error) { message.value = error.message; } }
 async function removeTask() { if (!confirm("确定删除当前宏循环吗？")) return; await device.deleteTask(); draft.value = createDefaultTaskPlan(device.slots); }
 </script>
 <template>
@@ -25,6 +27,10 @@ async function removeTask() { if (!confirm("确定删除当前宏循环吗？"))
 <h2>板载宏</h2>
 </div>
 <span class="muted">Flash 保存版本优先于同槽位的 C++ 内置版本</span>
+</div>
+<div v-if="storageNeedsReset" class="storage-warning">
+<div><strong>宏存储未挂载</strong><p>固件没有自动格式化 Flash，因此自定义宏暂时不可用。请先保留本地备份；只有确认无法恢复时，才执行下面的清空操作。</p></div>
+<button class="danger-text" :disabled="!device.ready || saving" @click="resetMacroStorage">清空并重新初始化</button>
 </div>
 <div class="slot-grid manager-slots">
 <article v-for="slot in device.slots" :key="slot.slot" class="slot-card" :class="{ empty: !slot.occupied, referenced: referenced.has(slot.slot) }">
