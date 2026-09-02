@@ -156,6 +156,7 @@ onBeforeUnmount(() => { clearInterval(recordingTimer); clearInterval(probeTimer)
         <span class="eyebrow">EXTERNAL GAMEPAD / 实体手柄</span>
         <strong>{{ gamepadHint }}</strong>
         <small>Xbox 与 PS5 都按实体位置映射：上/左/下/右分别对应 Switch X/Y/B/A；肩键、扳机、十字键和双摇杆保持对应。</small>
+        <small class="gamepad-detection-tip"><b>检测提示：</b>连接或唤醒实体手柄后，请在当前页面按一下任意按键，浏览器才会开始检测手柄。</small>
         <small class="recording-mode-hint">{{ recordingModeHint }}</small>
       </div>
       <div class="gamepad-panel-actions">
@@ -164,7 +165,10 @@ onBeforeUnmount(() => { clearInterval(recordingTimer); clearInterval(probeTimer)
           <option :value="null">自动选择第一个手柄</option>
           <option v-for="gamepad in gamepadDevices" :key="gamepad.index" :value="gamepad.index">{{ gamepad.type === 'ps5' ? 'PS5 DualSense' : gamepad.type === 'xbox' ? 'Xbox Elite 2' : '标准手柄' }} · {{ gamepad.id || `手柄 ${gamepad.index}` }}</option>
         </select>
-        <label class="gamepad-passthrough"><input v-model="passthrough" type="checkbox" :disabled="!device.ready" @change="togglePassthrough"> 实体手柄直通 Switch</label>
+        <label class="switch gamepad-passthrough">
+          <input v-model="passthrough" type="checkbox" :disabled="!device.ready" @change="togglePassthrough">
+          <span>{{ passthrough ? '✓ 实体手柄直通 Switch 已开启' : '实体手柄直通 Switch' }}</span>
+        </label>
       </div>
     </section>
     <section class="recording-mode-guide" aria-label="录制模式说明">
