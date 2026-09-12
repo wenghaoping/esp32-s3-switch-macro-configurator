@@ -1,5 +1,11 @@
 # ESP32-S3 Switch Macro Configurator
 
+> [!TIP]
+> ## Online console
+> **[https://wenghaoping.github.io/esp32-s3-switch-macro-configurator/](https://wenghaoping.github.io/esp32-s3-switch-macro-configurator/)**
+>
+> Connect the board's **USB-UART Type-C** port, open this address in Chrome or Edge, then select **Connect device** and choose the ESP32 serial port.
+
 [简体中文文档](./README.md)
 
 > [!IMPORTANT]

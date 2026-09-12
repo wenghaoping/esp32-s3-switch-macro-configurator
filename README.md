@@ -1,5 +1,11 @@
 # ESP32-S3 Switch Macro Configurator
 
+> [!TIP]
+> ## 在线控制台
+> **[https://wenghaoping.github.io/esp32-s3-switch-macro-configurator/](https://wenghaoping.github.io/esp32-s3-switch-macro-configurator/)**
+>
+> 通过开发板的 **USB-UART Type-C** 连接电脑后，请用 Chrome 或 Edge 打开此地址，点击“连接设备”并选择 ESP32 串口。
+
 [English README](./README-en.md)
 
 > [!IMPORTANT]
