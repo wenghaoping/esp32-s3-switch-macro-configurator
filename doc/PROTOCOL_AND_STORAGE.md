@@ -3,6 +3,9 @@
 ## 传输约定
 
 - UART0，115200 baud，ASCII 编码，一行一条命令。
+- 设备热点开启时，`POST /api/command?command=<URL 编码命令>` 提供同一套命令；响应仍为
+  原始 JSON、`OK`、`ERR` 行，浏览器不需要 Web Serial。
+- `POST /api/wifi/stop` 会在响应成功后关闭临时热点。
 - 固件响应是一行一个 JSON 对象。
 - 网页的请求/响应匹配集中在 `web/src/stores/device.js`。
 - 命令生成、宏/任务校验逻辑必须与固件保持字段顺序和数值语义一致。

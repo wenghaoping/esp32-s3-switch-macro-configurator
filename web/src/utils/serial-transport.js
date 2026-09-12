@@ -138,7 +138,7 @@ export class SerialTransport {
           return;
         }
         settled = true;
-        clearTimeout(waiter.timer);
+        globalThis.clearTimeout(waiter.timer);
         this.responseWaiters = this.responseWaiters.filter((item) => item !== waiter);
         rejectPromise(error);
       },
@@ -147,7 +147,7 @@ export class SerialTransport {
           return;
         }
         settled = true;
-        clearTimeout(waiter.timer);
+        globalThis.clearTimeout(waiter.timer);
         this.responseWaiters = this.responseWaiters.filter((item) => item !== waiter);
         resolvePromise(message);
       },
@@ -238,6 +238,149 @@ export class SerialTransport {
       this.connected = false;
       this.onDisconnect(new Error("串口数据流已经断开"));
     }
+  }
+}
+
+// 设备内嵌网页运行在 ESP32 自己的热点中。它沿用串口协议的命令和响应，
+// 只是把每条命令包装为同源 HTTP 请求，因此手机和桌面浏览器都不需要 Web Serial。
+export class HttpTransport {
+  constructor({ onLine, onDisconnect }) {
+    this.onLine = onLine;
+    this.onDisconnect = onDisconnect;
+    this.connected = false;
+    this.writeChain = Promise.resolve();
+    this.responseWaiters = [];
+    this.realtimePending = null;
+    this.realtimePumpActive = false;
+  }
+
+  async connect() {
+    this.connected = true;
+  }
+
+  async connectPort() {
+    await this.connect();
+  }
+
+  queueRequest(request) {
+    const result = this.writeChain.then(request, request);
+    this.writeChain = result.catch(() => {});
+    return result;
+  }
+
+  async request(command) {
+    if (!this.connected) throw new Error("Wi-Fi 控制台尚未连接");
+    const query = new URLSearchParams({ command });
+    const response = await fetch(`/api/command?${query}`, {
+      method: "POST",
+      cache: "no-store",
+    });
+    const body = await response.text();
+    if (!response.ok) throw new Error(body || `设备返回 HTTP ${response.status}`);
+    for (const line of body.split(/\r?\n/)) {
+      if (line.trim()) this.dispatchLine(line);
+    }
+  }
+
+  sendRealtime(command) {
+    return new Promise((resolve, reject) => {
+      if (this.realtimePending) {
+        this.realtimePending.waiters.push({ resolve, reject });
+        this.realtimePending.command = command;
+      } else {
+        this.realtimePending = { command, waiters: [{ resolve, reject }] };
+      }
+      if (!this.realtimePumpActive) {
+        this.realtimePumpActive = true;
+        this.queueRequest(async () => {
+          while (this.realtimePending) {
+            const pending = this.realtimePending;
+            this.realtimePending = null;
+            try {
+              await this.request(pending.command);
+              pending.waiters.forEach(({ resolve }) => resolve());
+            } catch (error) {
+              pending.waiters.forEach(({ reject }) => reject(error));
+            }
+          }
+          this.realtimePumpActive = false;
+        });
+      }
+    });
+  }
+
+  send(command) {
+    if (/^(R|REPORT)\s/.test(command)) return this.sendRealtime(command);
+    return this.queueRequest(() => this.request(command));
+  }
+
+  sendAndWait(command, {
+    timeoutMs = 2500,
+    predicate = (message) => message?.type === "ack" || message?.type === "error",
+  } = {}) {
+    const waiter = this.createResponseWaiter(predicate, timeoutMs);
+    return this.send(command).then(() => waiter.promise, (error) => {
+      waiter.cancel(error);
+      throw error;
+    });
+  }
+
+  createResponseWaiter(predicate, timeoutMs) {
+    let settled = false;
+    let resolvePromise;
+    let rejectPromise;
+    const waiter = {
+      predicate,
+      promise: new Promise((resolve, reject) => {
+        resolvePromise = resolve;
+        rejectPromise = reject;
+      }),
+      cancel: (error) => {
+        if (settled) return;
+        settled = true;
+        globalThis.clearTimeout(waiter.timer);
+        this.responseWaiters = this.responseWaiters.filter((item) => item !== waiter);
+        rejectPromise(error);
+      },
+      resolve: (message) => {
+        if (settled) return;
+        settled = true;
+        globalThis.clearTimeout(waiter.timer);
+        this.responseWaiters = this.responseWaiters.filter((item) => item !== waiter);
+        resolvePromise(message);
+      },
+      timer: null,
+    };
+    waiter.timer = globalThis.setTimeout(() => waiter.cancel(new Error("等待设备响应超时。")), timeoutMs);
+    this.responseWaiters.push(waiter);
+    return waiter;
+  }
+
+  dispatchLine(line) {
+    const message = parseDeviceLine(line);
+    for (const waiter of [...this.responseWaiters]) {
+      if (waiter.predicate(message, line)) {
+        waiter.resolve(message);
+        break;
+      }
+    }
+    this.onLine(line);
+  }
+
+  async disconnect() {
+    this.connected = false;
+    this.realtimePending?.waiters.forEach(({ reject }) => reject(new Error("Wi-Fi 控制台已断开。")));
+    this.realtimePending = null;
+    for (const waiter of [...this.responseWaiters]) {
+      waiter.cancel(new Error("Wi-Fi 控制台已断开。"));
+    }
+  }
+
+  async stopAccessPoint() {
+    const response = await fetch("/api/wifi/stop", { method: "POST" });
+    if (!response.ok) throw new Error("关闭热点失败。");
+    await this.disconnect();
+    this.onDisconnect(new Error("热点已关闭。"));
   }
 }
 

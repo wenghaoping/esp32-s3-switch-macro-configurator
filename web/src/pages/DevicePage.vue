@@ -15,26 +15,31 @@ async function importConfig(event) { const file=event.target.files?.[0]; if(!fil
   <PageTitle eyebrow="DEVICE & GPIO / 设备设置" title="接线、离线触发和备份。" description="这里不负责运行宏，只管理硬件连接和持久化配置。" />
   <section class="wiring-card large">
 <div>
-<p class="eyebrow">GEAR CHECK / 双链路</p>
-<h2>两根线，各干一件事。</h2>
-<p>两条线需要同时连接，网页控制和 Switch 手柄输出才会同时工作。</p>
+<p class="eyebrow">GEAR CHECK / 连接方式</p>
+<h2>Switch 与网页可同时工作。</h2>
+<p>原生 USB 连接 Switch；需要修改配置时，正常开机后长按 BOOT 3 秒开启临时热点。</p>
 </div>
 <div>
 <b>① 原生 USB → Switch 底座</b>
 <p>GPIO19 / GPIO20，由 ESP32-S3 模拟 Nintendo Switch 有线手柄。</p>
 </div>
 <div>
-<b>② USB-UART → 电脑</b>
-<p>115200 波特率，网页通过它保存宏、发送命令并读取状态。</p>
+<b>② Wi-Fi 热点 → 电脑或手机</b>
+<p>连接 ESP32-S3-Switch，再访问 http://192.168.9.1。USB-UART 仅用于烧录和日志。</p>
 </div>
 <figure class="board-port-guide">
   <div class="board-photo-wrap">
-    <img src="/images/esp32-s3-board-ports.jpg" alt="ESP32-S3 开发板实物，两个 USB-C 接口位于右侧">
-    <div class="port-label switch-port"><strong>连接电脑</strong><span>USB-UART · 网页串口</span></div>
+    <img src="https://oss-cdn.minij.com/vegapunk/BASE/20260912/e8f93f3046de49628cefccbeeef1a62e.jpg" alt="ESP32-S3 开发板实物，两个 USB-C 接口位于右侧">
+    <div class="port-label switch-port"><strong>烧录与日志</strong><span>USB-UART · 可选</span></div>
     <div class="port-label computer-port"><strong>连接 Switch</strong><span>原生 USB · 手柄输出</span></div>
   </div>
-  <figcaption>接口朝右时：上方 USB-UART 接电脑，下方原生 USB 接 Switch。两根线需要同时连接。</figcaption>
+  <figcaption>接口朝右时：下方原生 USB 接 Switch；网页通过按需开启的 Wi-Fi 热点访问。</figcaption>
 </figure>
+</section>
+  <section v-if="device.embeddedConsole" class="device-card">
+<div class="section-head"><div><p class="eyebrow">WI-FI CONSOLE / 临时热点</p><h2>ESP32-S3-Switch</h2></div></div>
+<p>当前网页来自开发板热点。关闭后请再次长按 BOOT 3 秒才能重新访问 192.168.9.1。</p>
+<div class="action-row"><button class="danger" @click="device.stopWifiConsole">关闭热点</button></div>
 </section>
   <section class="device-card">
 <div class="section-head">

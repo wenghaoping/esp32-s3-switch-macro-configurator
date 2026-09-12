@@ -1,6 +1,10 @@
 <script setup>
+import { onMounted } from "vue";
 import { useDeviceStore } from "./stores/device.js";
 const device = useDeviceStore();
+onMounted(() => {
+  if (device.embeddedConsole) device.connect();
+});
 </script>
 
 <template>

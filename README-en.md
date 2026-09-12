@@ -22,7 +22,7 @@ Required setup for that example macro: [Bilibili](https://www.bilibili.com/video
 ## Features
 
 - Emulates a wired Nintendo Switch controller over the ESP32-S3 native USB
-  port while USB-UART remains available for browser control.
+  port while an on-demand Wi-Fi hotspot serves the browser console.
 - Records, edits, imports, and runs custom button, D-pad, and dual-stick macros
   for any game that supports a Switch wired controller.
 - Includes four replaceable C++ example macros in firmware: Tempura Nest weapon
@@ -37,9 +37,8 @@ Required setup for that example macro: [Bilibili](https://www.bilibili.com/video
 - Keeps an active macro or task running if the browser or USB-UART connection
   drops. The board owns all timing, so ordinary serial jitter cannot interrupt
   a sequence halfway through.
-- Provides a Vue 3 Web Serial console with home, control, script library,
-  editor, recorder, and device/GPIO pages. Routing does not discard the live
-  serial connection.
+- Provides an embedded Vue 3 web console with home, control, script library,
+  editor, recorder, and device/GPIO pages.
 - Records controller actions, edits step-by-step macros, imports/exports
   version-2 JSON macros, and backs up or restores the full macro library.
 - Supports browser controls, keyboard input, Xbox Elite 2, and PS5 DualSense
@@ -93,9 +92,12 @@ USB-UART connectors.
 | Link | Board connection | Purpose |
 | --- | --- | --- |
 | Native USB | GPIO19 D- / GPIO20 D+ | Wired controller to the Switch dock |
-| USB-UART | UART0 through the onboard bridge | Browser control from the computer |
+| USB-UART | UART0 through the onboard bridge | Flashing, logs, and development serial control |
 
-Both links can stay connected at the same time. See the
+After normal boot, hold the onboard BOOT button for three seconds to start the
+open `ESP32-S3-Switch` hotspot, then open <http://192.168.9.1>. Hold BOOT again,
+use the page's hotspot button, or reboot to stop it. Do not hold BOOT during
+power-on: GPIO0 enters the bootloader then. See the
 [ESP32-S3-DevKitC-1 user guide](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32s3/esp32-s3-devkitc-1/user_guide_v1.0.html)
 for connector placement.
 
@@ -129,22 +131,23 @@ pio run -t upload --upload-port /dev/cu.usbserial-XXXX
 Use a port such as `COM5` on Windows or `/dev/ttyUSB0` on Linux. After flashing:
 
 1. Connect native USB to the Nintendo Switch dock.
-2. Connect USB-UART to the computer.
-3. Start the local WebUI.
-
-```bash
-npm run serve
-```
-
-Open <http://localhost:5173> in desktop Chrome or Edge. Web Serial requires a
-secure context, so opening `web/index.html` directly is not supported.
+2. After normal boot, hold BOOT for three seconds.
+3. Connect to `ESP32-S3-Switch` and open <http://192.168.9.1>.
 
 ## Use
 
-1. Select **连接设备** and choose the DevKitC-1 USB-UART port.
+1. Hold **BOOT** for three seconds after normal boot, connect to the hotspot,
+   and open <http://192.168.9.1>.
 2. Open **Control** to run one script continuously, or open **Scripts** to
    edit slots and configure a board task.
 3. Select **立即停止** to send a neutral controller report.
+
+### Wi-Fi LED indicator
+
+The board RGB LED flashes blue while BOOT is held. Once the hotspot has started,
+it double-flashes blue until a phone or computer joins `ESP32-S3-Switch`, then
+stays cyan. Turning the hotspot off returns the LED to idle green; active macro
+and task colors take priority.
 
 Disconnecting USB-UART does not stop an already running routine. Reconnect and
 stop it, reset the board, or remove power when you need to end it.
@@ -259,9 +262,9 @@ Project layout:
 - `firmware/include/ControllerPresets.h` — shared controller reports, button masks, and stick directions
 - `firmware/src/MacroLibrary.cpp` — persistent twelve-slot Flash macro library
 - `firmware/src/MacroEngine.cpp` — non-blocking loop engine
-- `firmware/src/main.cpp` — USB HID, serial protocol, and device main loop
+- `firmware/src/main.cpp` — USB HID, serial/HTTP protocol, Wi-Fi hotspot, and device main loop
 - `firmware/src/TaskPlanStorage.cpp` — persistent five-item board task plan
-- `web/src/` — Vue 3, Vue Router, Pinia, and Web Serial console
+- `web/src/` — Vue 3, Vue Router, Pinia, and embedded Wi-Fi console
 - `web/src/utils/` — macro JSON, controller mapping, serial protocol, backup, and task-plan utilities
 - `tests/` — host-side firmware and browser-logic tests
 

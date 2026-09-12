@@ -1,7 +1,7 @@
 {
   "name": "splatoon-farmers",
   "version": "2.0.0",
-  "description": "Board-resident ESP32-S3 material farming controller with a Web Serial console.",
+  "description": "Board-resident ESP32-S3 material farming controller with an on-demand Wi-Fi web console.",
   "private": true,
   "license": "GPL-3.0-only",
   "type": "module",

@@ -5,15 +5,15 @@
 ## 一句话说明
 
 这是一个基于 ESP32-S3-DevKitC-1 的 Nintendo Switch 有线手柄模拟器。ESP32-S3
-通过原生 USB 向 Switch 输出手柄报告；Vue 3 网页通过板载 USB-UART 和 Web Serial
-配置、录制、运行宏。宏、任务方案和 GPIO 触发均在板端运行，因此日常自动执行可以脱离电脑。
+通过原生 USB 向 Switch 输出手柄报告；Vue 3 网页编译进固件，并由按需开启的 Wi-Fi
+热点配置、录制、运行宏。宏、任务方案和 GPIO 触发均在板端运行，因此日常自动执行可以脱离电脑。
 
 ## 当前硬件拓扑
 
 ```text
 Xbox / PS5 / 键盘 / 网页虚拟手柄
                 ↓ 浏览器 Gamepad API 或页面操作
-Vue 3 WebUI ── Web Serial ── USB-UART桥 ── UART0
+Vue 3 WebUI ── HTTP / Wi-Fi AP ── ESP32-S3
                                                 ↓
                                           ESP32-S3
                                       宏 / 任务 / GPIO
@@ -25,7 +25,9 @@ Vue 3 WebUI ── Web Serial ── USB-UART桥 ── UART0
 
 - 原生 USB：GPIO19 D-、GPIO20 D+，工作在 USB Device 模式，使用 `switch_ESP32`
   模拟 Switch 有线手柄。
-- USB-UART：经开发板桥接芯片连接 UART0，115200 baud，用于网页控制和烧录。
+- USB-UART：经开发板桥接芯片连接 UART0，115200 baud，用于烧录、日志和开发期串口控制。
+- 正常启动后长按 BOOT（GPIO0）3 秒会临时开启开放热点 `ESP32-S3-Switch`；访问
+  `http://192.168.9.1` 即可使用网页，重启、再次长按或网页关闭热点后停止 Wi-Fi。
 - 两个接口彼此独立；USB-UART 口不是 USB Host，不能直接插 Xbox/PS5 手柄。
 - 浏览器断开后，已经启动的宏或任务继续由板端执行；实时手柄直通则依赖浏览器。
 
@@ -73,7 +75,7 @@ Xbox 和 DualSense 在浏览器中最终都转换成同一 `ControllerReport`。
 | 用户宏范围和校验 | `firmware/include/UserMacro.h` |
 | 12 槽存储 | `firmware/include/MacroLibrary.h`、`firmware/src/MacroLibrary.cpp` |
 | 板载任务 | `firmware/include/TaskPlan.h`、`firmware/src/TaskPlanStorage.cpp` |
-| Web 串口生命周期 | `web/src/utils/serial-transport.js`、`web/src/stores/device.js` |
+| Web HTTP / 串口传输 | `web/src/utils/serial-transport.js`、`web/src/stores/device.js` |
 | 网页协议生成/解析 | `web/src/utils/protocol.js`、`web/src/utils/macro-editor.js` |
 | 实体手柄映射 | `web/src/utils/gamepad-input.js` |
 | 页面路由 | `web/src/router.js` |

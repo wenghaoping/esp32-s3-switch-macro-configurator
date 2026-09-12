@@ -98,16 +98,16 @@ const currentAction = computed(() => describeCurrentAction(device.status));
 </section>
   <section class="wiring-card">
 <div>
-<p class="eyebrow">GEAR CHECK / 双链路</p>
-<h2>两根线，各干一件事。</h2>
+<p class="eyebrow">GEAR CHECK / 连接方式</p>
+<h2>Switch 与网页可同时工作。</h2>
 </div>
 <div>
 <b>① 原生 USB → Switch 底座</b>
 <p>负责模拟有线手柄。</p>
 </div>
 <div>
-<b>② USB-UART → 电脑</b>
-<p>网页配置、发令并读取状态。</p>
+<b>② 长按 BOOT → Wi-Fi 热点</b>
+<p>连接 ESP32-S3-Switch 后访问 192.168.9.1。</p>
 </div>
 </section>
 </template>

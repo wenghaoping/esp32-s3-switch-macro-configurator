@@ -9,6 +9,9 @@ class StatusLed {
  public:
   enum class BaseState : uint8_t {
     kIdle,
+    kWifiConsoleStarting,
+    kWifiConsole,
+    kWifiConsoleConnected,
     kMacroRunning,
     kTaskRunning,
     kUploading,

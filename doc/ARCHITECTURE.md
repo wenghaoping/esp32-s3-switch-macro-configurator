@@ -51,19 +51,20 @@ Nintendo Switch
 ## WebUI 数据流
 
 ```text
-Vue 页面
+Vue 页面（设备热点中为 HTTP；本地开发为 Web Serial）
    ↓ Pinia action
 web/src/stores/device.js
    ↓ 一行一条 ASCII 命令
-serial-transport.js / Web Serial
-   ↓ UART0
+serial-transport.js / HTTP POST
+   ↓ UART0 或 /api/command
 固件 JSON 行响应
    ↓ store.handleMessage()
 页面状态
 ```
 
 - `App.vue` 保持全局设备 store，页面切换不应重建串口连接。
-- `serial-transport.js` 负责端口生命周期、读写循环和断线处理。
+- `serial-transport.js` 同时负责本地 Web Serial 与设备内嵌页面的 HTTP 传输；两者共享
+  一行一条命令与响应协议。
 - `device.js` 负责请求/响应匹配、轮询、通知、槽位/任务/GPIO 状态。
 - `MockSerialTransport` 是页面模拟模式和协议测试的重要兼容实现；添加真实命令时通常
   也要同步 mock。

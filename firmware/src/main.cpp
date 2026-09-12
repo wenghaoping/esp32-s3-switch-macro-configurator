@@ -1,11 +1,14 @@
 #include <Arduino.h>
 
 #include <Preferences.h>
+#include <WebServer.h>
+#include <WiFi.h>
 
 #include <stdio.h>
 #include <string.h>
 
 #include "ControllerReport.h"
+#include "EmbeddedWebAssets.h"
 #include "BuiltinMacroLibrary.h"
 #include "MacroEngine.h"
 #include "MacroLibrary.h"
@@ -24,16 +27,48 @@
  *
  * 本文件统一处理：串口命令、C++ 内置宏与 Flash 宏的选择、五项任务方案、
  * GPIO 离线触发、状态 JSON，以及最终的 HID 报告发送。原生 USB 专门留给
- * switch_ESP32；控制协议必须走 UART，二者才能同时稳定工作。
+ * switch_ESP32；控制协议可走 UART 或按需开启的 Wi-Fi HTTP，二者均不占用原生 USB。
  */
-#ifndef ATT_CONTROL_SERIAL
-#define ATT_CONTROL_SERIAL Serial
+class ControlOutput final : public Stream {
+ public:
+  void begin(unsigned long baudRate) { Serial.begin(baudRate); }
+  int available() override { return Serial.available(); }
+  int read() override { return Serial.read(); }
+  int peek() override { return Serial.peek(); }
+  void flush() override { Serial.flush(); }
+  size_t write(uint8_t value) override { return write(&value, 1); }
+  size_t write(const uint8_t* buffer, size_t size) override {
+    const size_t written = Serial.write(buffer, size);
+    if (httpServer_ != nullptr) {
+      httpServer_->sendContent(reinterpret_cast<const char*>(buffer), size);
+    }
+    return written;
+  }
+
+  void beginHttpResponse(WebServer* server) { httpServer_ = server; }
+  void endHttpResponse() { httpServer_ = nullptr; }
+
+ private:
+  WebServer* httpServer_ = nullptr;
+};
+
+ControlOutput ControlSerial;
+
+#ifdef ATT_CONTROL_SERIAL
+#undef ATT_CONTROL_SERIAL
 #endif
+#define ATT_CONTROL_SERIAL ControlSerial
 
 namespace {
 
 constexpr uint32_t kControlBaudRate = 115200;
-constexpr char kFirmwareVersion[] = "SplatoonFarmers/2.0.1";
+constexpr char kFirmwareVersion[] = "SplatoonFarmers/2.1.0";
+constexpr char kWifiApSsid[] = "ESP32-S3-Switch";
+constexpr uint8_t kBootButtonPin = 0;
+constexpr uint32_t kWifiToggleHoldMs = 3000;
+const IPAddress kWifiApAddress(192, 168, 9, 1);
+const IPAddress kWifiApGateway(192, 168, 9, 1);
+const IPAddress kWifiApSubnet(255, 255, 255, 0);
 constexpr uint8_t kTriggerCount = 12;
 // GPIO trigger targets use 0-11 for macro slots; 12 starts the saved task plan.
 constexpr uint8_t kTaskTriggerSlot = farmers::kMacroLibrarySlotCount;
@@ -68,6 +103,13 @@ farmers::MacroEngine Macro(nullptr, 0, 0, true);
 farmers::MacroLibrary MacroLibrary;
 farmers::TaskPlanStorage TaskStore;
 farmers::StatusLed StatusLed;
+WebServer WebConsole(80);
+bool WifiConsoleActive = false;
+bool BootButtonPressed = false;
+bool BootButtonToggleHandled = false;
+uint32_t BootButtonChangedAtMs = 0;
+bool WifiStopScheduled = false;
+uint32_t WifiStopAtMs = 0;
 farmers::TaskPlan SavedTaskPlan{};
 farmers::TaskPlan StagedTaskPlan{};
 bool TaskPlanAvailable = false;
@@ -117,6 +159,129 @@ void emitState(const char* type);
 void clearTaskExecution(bool stopMacro = true);
 bool validateTaskSlots(const farmers::TaskPlan& plan);
 bool startTaskPlan();
+void handleLine(char* line);
+
+const EmbeddedWebAsset* embeddedWebAssetForPath(const String& path) {
+  for (size_t index = 0; index < kEmbeddedWebAssetCount; ++index) {
+    if (path == kEmbeddedWebAssets[index].path) {
+      return &kEmbeddedWebAssets[index];
+    }
+  }
+  return nullptr;
+}
+
+void serveEmbeddedWebAsset() {
+  String path = WebConsole.uri();
+  if (path == "/") {
+    path = "/index.html";
+  }
+  const EmbeddedWebAsset* asset = embeddedWebAssetForPath(path);
+  if (asset == nullptr) {
+    WebConsole.send(404, "text/plain; charset=utf-8", "Not found");
+    return;
+  }
+  WebConsole.sendHeader("Content-Encoding", "gzip");
+  WebConsole.sendHeader("Vary", "Accept-Encoding");
+  WebConsole.sendHeader("Cache-Control", path == "/index.html"
+                                           ? "no-cache"
+                                           : "public, max-age=31536000, immutable");
+  WebConsole.send_P(200, asset->contentType,
+                    reinterpret_cast<PGM_P>(asset->data), asset->size);
+}
+
+void finishChunkedHttpResponse() {
+  ATT_CONTROL_SERIAL.endHttpResponse();
+  WebConsole.sendContent("", 0);
+}
+
+void handleWebCommand() {
+  const String command = WebConsole.arg("command");
+  if (command.length() == 0 || command.length() >= sizeof(LineBuffer) ||
+      command.indexOf('\n') >= 0 || command.indexOf('\r') >= 0) {
+    WebConsole.send(400, "text/plain; charset=utf-8",
+                    "ERR invalid-command");
+    return;
+  }
+
+  char line[sizeof(LineBuffer)] = {};
+  command.toCharArray(line, sizeof(line));
+  WebConsole.setContentLength(CONTENT_LENGTH_UNKNOWN);
+  WebConsole.sendHeader("Cache-Control", "no-store");
+  WebConsole.send(200, "text/plain; charset=utf-8", "");
+  ATT_CONTROL_SERIAL.beginHttpResponse(&WebConsole);
+  handleLine(line);
+  finishChunkedHttpResponse();
+}
+
+void stopWifiConsole() {
+  WifiStopScheduled = false;
+  if (!WifiConsoleActive) {
+    return;
+  }
+  WebConsole.stop();
+  WiFi.softAPdisconnect(true);
+  WiFi.mode(WIFI_OFF);
+  WifiConsoleActive = false;
+}
+
+void scheduleWifiConsoleStop() {
+  WifiStopScheduled = true;
+  WifiStopAtMs = millis() + 120;
+}
+
+void handleWebConsoleStop() {
+  WebConsole.send(200, "application/json", "{\"ok\":true}");
+  scheduleWifiConsoleStop();
+}
+
+void startWifiConsole() {
+  if (WifiConsoleActive) {
+    return;
+  }
+  WiFi.mode(WIFI_AP);
+  if (!WiFi.softAPConfig(kWifiApAddress, kWifiApGateway, kWifiApSubnet) ||
+      !WiFi.softAP(kWifiApSsid)) {
+    WiFi.mode(WIFI_OFF);
+    StatusLed.notifyError();
+    return;
+  }
+  WebConsole.begin();
+  WifiConsoleActive = true;
+}
+
+void setupWebConsole() {
+  WebConsole.on("/api/command", HTTP_POST, handleWebCommand);
+  WebConsole.on("/api/wifi/stop", HTTP_POST, handleWebConsoleStop);
+  WebConsole.onNotFound(serveEmbeddedWebAsset);
+}
+
+void pollWebConsole(uint32_t nowMs) {
+  const bool pressed = digitalRead(kBootButtonPin) == LOW;
+  if (pressed != BootButtonPressed) {
+    BootButtonPressed = pressed;
+    BootButtonChangedAtMs = nowMs;
+    if (!pressed) {
+      BootButtonToggleHandled = false;
+    }
+  }
+  if (pressed && !BootButtonToggleHandled &&
+      static_cast<uint32_t>(nowMs - BootButtonChangedAtMs) >=
+          kWifiToggleHoldMs) {
+    BootButtonToggleHandled = true;
+    if (WifiConsoleActive) {
+      stopWifiConsole();
+    } else {
+      startWifiConsole();
+    }
+  }
+  if (WifiStopScheduled &&
+      static_cast<int32_t>(nowMs - WifiStopAtMs) >= 0) {
+    stopWifiConsole();
+  }
+  if (WifiConsoleActive) {
+    WebConsole.handleClient();
+  }
+}
 
 uint8_t clampAxis(unsigned long value) {
   return value > 255 ? 255 : static_cast<uint8_t>(value);
@@ -479,6 +644,12 @@ void updateStatusLed(uint32_t nowMs) {
     state = farmers::StatusLed::BaseState::kTaskRunning;
   } else if (Macro.running()) {
     state = farmers::StatusLed::BaseState::kMacroRunning;
+  } else if (BootButtonPressed && !BootButtonToggleHandled) {
+    state = farmers::StatusLed::BaseState::kWifiConsoleStarting;
+  } else if (WifiConsoleActive && WiFi.softAPgetStationNum() > 0) {
+    state = farmers::StatusLed::BaseState::kWifiConsoleConnected;
+  } else if (WifiConsoleActive) {
+    state = farmers::StatusLed::BaseState::kWifiConsole;
   }
   StatusLed.setBaseState(state);
   StatusLed.update(nowMs);
@@ -503,6 +674,8 @@ void emitState(const char* type) {
   ATT_CONTROL_SERIAL.printf(
       "{\"type\":\"%s\",\"ok\":true,\"firmware\":\"%s\","
       "\"macro_storage\":\"%s\","
+      "\"web_console\":%s,\"web_console_ssid\":\"%s\","
+      "\"web_console_ip\":\"192.168.9.1\","
       "\"routine\":\"material-farm\",\"source\":\"%s\",\"state\":\"%s\","
       "\"phase\":\"%s\",\"step\":%u,\"steps\":%u,\"cycle\":%lu,"
       "\"duration_ms\":%lu,\"loop_gap_ms\":%lu,\"cycle_ms\":%lu,"
@@ -515,7 +688,8 @@ void emitState(const char* type) {
       "\"repeat\":%s,\"slot\":%d,\"active_slot\":%d,"
       "\"running_slot\":%d,\"last_trigger\":%d,"
       "\"trigger_state\":\"%s\",\"stop_pin\":%u,\"name\":",
-      type, kFirmwareVersion, MacroLibrary.storageStatus(), activeMacroSource(),
+      type, kFirmwareVersion, MacroLibrary.storageStatus(),
+      WifiConsoleActive ? "true" : "false", kWifiApSsid, activeMacroSource(),
       (Macro.running() || TaskActive) ? "running" : "idle",
       phaseName(Macro.phase()), static_cast<unsigned int>(visibleStep),
       static_cast<unsigned int>(ActiveMacro.stepCount),
@@ -1754,6 +1928,10 @@ void setup() {
   StatusLed.begin();
   StatusLed.setBrightness(static_cast<uint8_t>(STATUS_LED_BRIGHTNESS));
   ATT_CONTROL_SERIAL.begin(kControlBaudRate);
+  pinMode(kBootButtonPin, INPUT_PULLUP);
+  BootButtonPressed = digitalRead(kBootButtonPin) == LOW;
+  BootButtonChangedAtMs = millis();
+  setupWebConsole();
   loadActiveMacro();
   TaskPlanAvailable = TaskStore.load(&SavedTaskPlan) &&
                       validateTaskSlots(SavedTaskPlan);
@@ -1768,6 +1946,7 @@ void loop() {
   // 主循环没有 delay()：串口、GPIO、宏状态机、任务状态机与 USB HID 轮流推进。
   readControlSerial();
   const uint32_t nowMs = millis();
+  pollWebConsole(nowMs);
   pollTriggers(nowMs);
   pollPendingMacroStart(nowMs);
   Macro.tick(nowMs);
