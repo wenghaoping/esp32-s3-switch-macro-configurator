@@ -16,15 +16,13 @@
 
 ## 把重复按键留在板上执行
 
-这是一个基于 ESP32-S3 的 Nintendo Switch 有线手柄模拟器与浏览器控制台。网页负责录制、编辑、导入和管理；开发板负责精确计时、循环运行和离线 GPIO 触发。对应关系很简单：
+这是一个基于 ESP32-S3 的 Nintendo Switch 有线手柄模拟器与浏览器控制台。网页负责录制、编辑、导入和管理；开发板负责精确计时、循环运行和离线 GPIO 触发。
 
-- **原生 USB（GPIO19 / GPIO20）→ Switch 底座**：ESP32-S3 以有线手柄身份输出按键。
-- **USB-UART Type-C → GitHub Pages → 浏览器**：电脑连接开发板的 USB-UART 接口后，使用
-  [在线控制台](https://wenghaoping.github.io/esp32-s3-switch-macro-configurator/)；在 Chrome 或 Edge
-  点击连接并选择串口，即可控制开发板。
-- **BOOT 长按 → Wi-Fi 热点 → 浏览器**：正常启动后长按 BOOT 3 秒，连接
-  `ESP32-S3-Switch` 并访问 <http://192.168.9.1>，进行配置、录制和实时控制。
-- **Flash / GPIO → 脱机执行**：保存后的宏、最多 5 项的宏循环和 GPIO 触发器都在板端运行；浏览器断开不会中断已启动的流程。
+- **手柄输出（与网页连接方式无关）**：原生 USB（GPIO19 / GPIO20）连接 Switch 底座，ESP32-S3 以有线手柄身份输出按键。
+- **连接方式一：在线网页有线控制**：电脑通过开发板的 USB-UART Type-C 连接 ESP32，在 Chrome 或 Edge 打开 [在线控制台](https://wenghaoping.github.io/esp32-s3-switch-macro-configurator/)，点击连接并选择串口。
+- **连接方式二：板载热点离线控制**：设备正常启动后长按 BOOT 3 秒，电脑或手机连接 `ESP32-S3-Switch` 热点，再访问 <http://192.168.9.1>。网页和控制接口都在开发板中，无需互联网。
+- **两种网页连接方式二选一即可**：有网络、通过电脑 USB-UART 配置时使用方式一；无网络、手机临时配置时使用方式二。
+- **脱机执行**：保存后的宏、最多 5 项的宏循环和 GPIO 触发器都在板端运行；浏览器断开不会中断已启动的流程。
 
 ![](./images/banner.png)
 
