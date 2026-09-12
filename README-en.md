@@ -114,7 +114,7 @@ Do not connect the adapter VCC when the board is already powered from the
 Switch. For the strongest protection against host-side reset signals, use only
 TX, RX, and GND.
 
-## Two ways to use the web console
+## Three ways to use the web console
 
 ### GitHub Pages over USB-UART
 
@@ -144,6 +144,18 @@ held, double-blinks blue until a client joins the hotspot, and stays cyan while
 a client is connected. Once the hotspot closes, normal idle/macro/task colors
 resume.
 
+### Local project over USB-UART (development and debugging)
+
+1. In this repository, run `npm install` once.
+2. Run `npm run dev`, then open the local address printed by Vite (normally
+   <http://localhost:5173>).
+3. Connect the board's **USB-UART Type-C** port and, in Chrome or Edge, select
+   **Connect device** and choose the ESP32 serial port.
+
+This is the original local-development workflow and does not depend on GitHub
+Pages. Use it while changing or debugging the web console; use GitHub Pages for
+ordinary wired configuration and the Wi-Fi hotspot when configuring offline.
+
 ## Build and flash
 
 Install Python 3 and [PlatformIO Core](https://docs.platformio.org/en/latest/core/index.html):
@@ -162,8 +174,8 @@ pio run -t upload --upload-port /dev/cu.usbserial-XXXX
 ```
 
 Use a port such as `COM5` on Windows or `/dev/ttyUSB0` on Linux. After flashing,
-choose either GitHub Pages over USB-UART or the ESP32 Wi-Fi hotspot above. The
-native USB port can remain connected to the Nintendo Switch dock.
+choose any of the three web-console methods above. The native USB port can
+remain connected to the Nintendo Switch dock.
 
 ## Use
 
