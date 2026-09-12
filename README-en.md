@@ -22,7 +22,8 @@ Required setup for that example macro: [Bilibili](https://www.bilibili.com/video
 ## Features
 
 - Emulates a wired Nintendo Switch controller over the ESP32-S3 native USB
-  port while an on-demand Wi-Fi hotspot serves the browser console.
+  port, with one browser console deployed to GitHub Pages and embedded in the
+  board's on-demand Wi-Fi hotspot.
 - Records, edits, imports, and runs custom button, D-pad, and dual-stick macros
   for any game that supports a Switch wired controller.
 - Includes four replaceable C++ example macros in firmware: Tempura Nest weapon
@@ -94,11 +95,7 @@ USB-UART connectors.
 | Native USB | GPIO19 D- / GPIO20 D+ | Wired controller to the Switch dock |
 | USB-UART | UART0 through the onboard bridge | Flashing, logs, and development serial control |
 
-After normal boot, hold the onboard BOOT button for three seconds to start the
-open `ESP32-S3-Switch` hotspot, then open <http://192.168.9.1>. Hold BOOT again,
-use the page's hotspot button, or reboot to stop it. Do not hold BOOT during
-power-on: GPIO0 enters the bootloader then. See the
-[ESP32-S3-DevKitC-1 user guide](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32s3/esp32-s3-devkitc-1/user_guide_v1.0.html)
+See the [ESP32-S3-DevKitC-1 user guide](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32s3/esp32-s3-devkitc-1/user_guide_v1.0.html)
 for connector placement.
 
 If the board exposes only native USB, connect an external USB-UART adapter:
@@ -110,6 +107,36 @@ If the board exposes only native USB, connect an external USB-UART adapter:
 Do not connect the adapter VCC when the board is already powered from the
 Switch. For the strongest protection against host-side reset signals, use only
 TX, RX, and GND.
+
+## Two ways to use the web console
+
+### GitHub Pages over USB-UART
+
+1. Connect the board's **USB-UART Type-C** connector to the computer. Do not
+   use the native USB port that is connected to the Switch.
+2. Open the [online console](https://wenghaoping.github.io/esp32-s3-switch-macro-configurator/)
+   in desktop Chrome or Edge.
+3. Select **Connect device** and choose the ESP32 serial port in the browser
+   permission dialog.
+
+GitHub Pages delivers the UI, but commands go directly from the browser to the
+computer's USB-UART device. Macro timing and storage stay on the board. The
+page needs internet access for its first load, and the browser always requires
+an explicit serial-port selection.
+
+### Offline ESP32 Wi-Fi hotspot
+
+1. After a normal boot, hold **BOOT** for three seconds. Do not hold it while
+   powering on.
+2. Join the open `ESP32-S3-Switch` hotspot.
+3. Open <http://192.168.9.1>. The page and control API both come from the board,
+   so no internet connection is required.
+
+The hotspot stops after a restart, another three-second BOOT hold, or the
+hotspot stop button on the page. The RGB LED fast-blinks blue while BOOT is
+held, double-blinks blue until a client joins the hotspot, and stays cyan while
+a client is connected. Once the hotspot closes, normal idle/macro/task colors
+resume.
 
 ## Build and flash
 
@@ -128,26 +155,16 @@ working commit. Flash through the board's USB-UART connector:
 pio run -t upload --upload-port /dev/cu.usbserial-XXXX
 ```
 
-Use a port such as `COM5` on Windows or `/dev/ttyUSB0` on Linux. After flashing:
-
-1. Connect native USB to the Nintendo Switch dock.
-2. After normal boot, hold BOOT for three seconds.
-3. Connect to `ESP32-S3-Switch` and open <http://192.168.9.1>.
+Use a port such as `COM5` on Windows or `/dev/ttyUSB0` on Linux. After flashing,
+choose either GitHub Pages over USB-UART or the ESP32 Wi-Fi hotspot above. The
+native USB port can remain connected to the Nintendo Switch dock.
 
 ## Use
 
-1. Hold **BOOT** for three seconds after normal boot, connect to the hotspot,
-   and open <http://192.168.9.1>.
+1. Open either web-console entry above and wait until the board is connected.
 2. Open **Control** to run one script continuously, or open **Scripts** to
    edit slots and configure a board task.
 3. Select **立即停止** to send a neutral controller report.
-
-### Wi-Fi LED indicator
-
-The board RGB LED flashes blue while BOOT is held. Once the hotspot has started,
-it double-flashes blue until a phone or computer joins `ESP32-S3-Switch`, then
-stays cyan. Turning the hotspot off returns the LED to idle green; active macro
-and task colors take priority.
 
 Disconnecting USB-UART does not stop an already running routine. Reconnect and
 stop it, reset the board, or remove power when you need to end it.

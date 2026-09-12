@@ -51,7 +51,7 @@ Nintendo Switch
 ## WebUI 数据流
 
 ```text
-Vue 页面（设备热点中为 HTTP；本地开发为 Web Serial）
+Vue 页面（GitHub Pages / 本地开发为 Web Serial；设备热点中为 HTTP）
    ↓ Pinia action
 web/src/stores/device.js
    ↓ 一行一条 ASCII 命令
@@ -63,11 +63,18 @@ serial-transport.js / HTTP POST
 ```
 
 - `App.vue` 保持全局设备 store，页面切换不应重建串口连接。
-- `serial-transport.js` 同时负责本地 Web Serial 与设备内嵌页面的 HTTP 传输；两者共享
+- `serial-transport.js` 同时负责 GitHub Pages / 本地 Web Serial 与设备内嵌页面的 HTTP 传输；两者共享
   一行一条命令与响应协议。
 - `device.js` 负责请求/响应匹配、轮询、通知、槽位/任务/GPIO 状态。
 - `MockSerialTransport` 是页面模拟模式和协议测试的重要兼容实现；添加真实命令时通常
   也要同步 mock。
+
+## 构建与发布
+
+- 本地 `npm run build` 的资源根路径为 `/`，输出会被 `scripts/embed-web-assets.mjs` 压缩并写入
+  `firmware/generated/EmbeddedWebAssets.h`，供设备热点使用。
+- GitHub Actions 在 `codex/wifi-web-console` 推送时设置 `VITE_BASE_PATH` 为仓库子路径，将相同
+  源码输出到 `dist/` 并由 GitHub Pages 发布。线上页面因此走 Web Serial，不会尝试跨域访问设备热点。
 
 ## 页面与路由
 
