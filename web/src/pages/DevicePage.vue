@@ -27,6 +27,7 @@ async function importConfig(event) { const file=event.target.files?.[0]; if(!fil
 <b>② Wi-Fi 热点 → 电脑或手机</b>
 <p>连接 ESP32-S3-Switch，再访问 http://192.168.9.1。USB-UART 仅用于烧录和日志。</p>
 </div>
+
 <figure class="board-port-guide">
   <div class="board-photo-wrap">
     <img src="https://oss-cdn.minij.com/vegapunk/BASE/20260912/e8f93f3046de49628cefccbeeef1a62e.jpg" alt="ESP32-S3 开发板实物，两个 USB-C 接口位于右侧">
