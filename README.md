@@ -304,7 +304,3 @@ pio run
 本项目是非官方粉丝项目，与 Nintendo 无关联，也未获得 Nintendo 的认可或赞助。
 Splatoon、Splatoon Raiders、Nintendo Switch 以及相关名称和标志均归各自权利人所有。
 请负责任地使用自动化功能；本项目仅用于离线单人模式下刷取材料。
-
-## 致谢
-
-感谢 [我的茕茕孑立](https://space.bilibili.com/35615481) 提供原始游戏手柄宏。

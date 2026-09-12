@@ -316,7 +316,3 @@ This is an unofficial fan project and is not affiliated with, endorsed by, or
 sponsored by Nintendo. Splatoon, Splatoon Raiders, Nintendo Switch, and related
 names and marks belong to their respective owners. Use automation responsibly;
 the project is intended for offline, single-player material farming.
-
-## Credits
-
-Thanks to [我的茕茕孑立](https://space.bilibili.com/35615481) for the original game controller macro.
