@@ -19,6 +19,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+
+      # `pio run` invokes scripts/embed_web_assets.py, which runs the Vite
+      # build to embed the browser console in Flash. Install dependencies
+      # before both the host-side tests and the firmware build.
+      - name: Install Node.js dependencies
+        run: npm ci
 
       - name: Run host-side tests
         run: npm test
