@@ -1,19 +1,29 @@
 # ESP32-S3 Switch Macro Configurator
 
+> [!TIP]
+> ## 在线控制台
+> **[https://wenghaoping.github.io/esp32-s3-switch-macro-configurator/](https://wenghaoping.github.io/esp32-s3-switch-macro-configurator/)**
+>
+> 通过开发板的 **USB-UART Type-C** 连接电脑后，请用 Chrome 或 Edge 打开此地址，点击“连接设备”并选择 ESP32 串口。
+
 [English README](./README-en.md)
 
 > [!IMPORTANT]
-> **一块 ESP32-S3，同时连 Switch 和电脑：原生 USB 负责模拟 Switch 有线手柄，
-> USB-UART 负责网页配置。** 宏、宏循环和 GPIO 触发器保存到开发板后都由板端执行，
+> **一块 ESP32-S3：原生 USB 负责模拟 Switch 有线手柄；网页既可由 GitHub Pages 通过
+> USB-UART 控制，也可由按需 Wi-Fi 热点离线控制。**
+> 宏、宏循环和 GPIO 触发器保存到开发板后都由板端执行，
 > 日常运行不需要让电脑一直在线。
 
 ## 把重复按键留在板上执行
 
-这是一个基于 ESP32-S3 的 Nintendo Switch 有线手柄模拟器与浏览器控制台。网页负责录制、编辑、导入和管理；开发板负责精确计时、循环运行和离线 GPIO 触发。对应关系很简单：
+这是一个基于 ESP32-S3 的 Nintendo Switch 有线手柄模拟器与浏览器控制台。网页负责录制、编辑、导入和管理；开发板负责精确计时、循环运行和离线 GPIO 触发。
 
-- **原生 USB（GPIO19 / GPIO20）→ Switch 底座**：ESP32-S3 以有线手柄身份输出按键。
-- **USB-UART → 电脑浏览器**：通过 Web Serial 连接 Vue 控制台，进行配置、录制和实时控制。
-- **Flash / GPIO → 脱机执行**：保存后的宏、最多 5 项的宏循环和 GPIO 触发器都在板端运行；浏览器断开不会中断已启动的流程。
+- **手柄输出（与网页连接方式无关）**：原生 USB（GPIO19 / GPIO20）连接 Switch 底座，ESP32-S3 以有线手柄身份输出按键。
+- **连接方式一：在线网页有线控制**：电脑通过开发板的 USB-UART Type-C 连接 ESP32，在 Chrome 或 Edge 打开 [在线控制台](https://wenghaoping.github.io/esp32-s3-switch-macro-configurator/)，点击连接并选择串口。
+- **连接方式二：板载热点离线控制**：设备正常启动后长按 BOOT 3 秒，电脑或手机连接 `ESP32-S3-Switch` 热点，再访问 <http://192.168.9.1>。网页和控制接口都在开发板中，无需互联网。
+- **连接方式三：本地项目有线控制**：在本仓库执行 `npm run dev`，用 Chrome 或 Edge 打开 `http://localhost:5173`，再通过 USB-UART Type-C 选择 ESP32 串口。这是此前一直使用的本地开发方式。
+- **三种网页连接方式三选一即可**：日常有线使用方式一；无网络或用手机临时配置时使用方式二；修改网页、调试功能时使用方式三。
+- **脱机执行**：保存后的宏、最多 5 项的宏循环和 GPIO 触发器都在板端运行；浏览器断开不会中断已启动的流程。
 
 ![](./images/banner.png)
 
@@ -38,7 +48,7 @@ Vue 3 控制台、宏录制、十二个脚本槽位和五段板载任务说明�
 - 宏编辑器支持逐步骤编辑、事务式上传与校验；录制器支持网页手柄、键盘、Xbox Elite 2 和 PS5 DualSense，并提供精细模拟量与视角固定脉冲两种模式；支持 v2 JSON 宏导入导出及完整脚本库备份恢复。
 - 支持单宏无限循环，也支持最多 5 项的板载跨脚本任务；每项可设置运行次数和完成后间隔，整个任务方案还可整体循环。
 - 浏览器或 USB-UART 断开后，正在运行的宏或板载任务仍会继续；关键时序完全由 ESP32-S3 执行，不受普通串口抖动影响。
-- 提供 Vue 3 + Vite 单页控制台：首页、控制、脚本库、编辑器、录制器和设备/GPIO 页面切换时均保持同一次 Web Serial 连接。
+- 同一份 Vue 3 单页控制台同时部署到 GitHub Pages 和 ESP32 Flash：首页、控制、脚本库、编辑器、录制器和设备/GPIO 页面可在线或离线访问。
 - 支持 12 个可配置的 GPIO 启动触发器和 1 个停止触发器，保存后无需浏览器也能启动指定宏。
 - 提供全部数字按键、十字键和双摇杆的鼠标、触摸与键盘操作；页面失焦或隐藏时会释放浏览器保持的输入。
 
@@ -89,7 +99,7 @@ Vue 3 控制台、宏录制、十二个脚本槽位和五段板载任务说明�
 
 ### 设备、GPIO 与备份
 
-先按图确认两条 USB 线的位置：**上方 USB-UART 接电脑**，**下方原生 USB 接 Switch**，两条线可同时连接。随后可配置 12 条离线 GPIO 启动规则与 1 条停止规则，并导出或导入包含宏、宏循环和 GPIO 的完整备份。
+先按图确认原生 USB 接 Switch。需要网页配置时，设备正常启动后长按 BOOT 3 秒，连接热点后打开 <http://192.168.9.1>。随后可配置 12 条离线 GPIO 启动规则与 1 条停止规则，并导出或导入包含宏、宏循环和 GPIO 的完整备份。
 
 ![设备与 GPIO：接线、触发器和备份](./images/screenshots/device-gpio.png)
 
@@ -100,7 +110,7 @@ Vue 3 控制台、宏录制、十二个脚本槽位和五段板载任务说明�
 | 连接 | 开发板接口 | 用途 |
 | --- | --- | --- |
 | 原生 USB | GPIO19 D- / GPIO20 D+ | 作为有线手柄连接到 Switch 底座 |
-| USB-UART | 通过板载桥接芯片连接 UART0 | 从电脑端浏览器进行控制 |
+| USB-UART | 通过板载桥接芯片连接 UART0 | 烧录、日志与开发期串口控制 |
 
 两路连接可以同时保持接通。接口位置请参阅
 [ESP32-S3-DevKitC-1 用户指南](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32s3/esp32-s3-devkitc-1/user_guide_v1.0.html)。
@@ -113,6 +123,32 @@ Vue 3 控制台、宏录制、十二个脚本槽位和五段板载任务说明�
 
 如果开发板已经由 Switch 供电，请勿连接转接器的 VCC。为了最大程度避免主机端复位信号的影响，
 只连接 TX、RX 和 GND。
+
+## 三种网页控制方式
+
+### 方式一：GitHub Pages 有线控制（推荐日常使用）
+
+1. 使用开发板的 **USB-UART Type-C** 接口连接电脑；不要占用已经接到 Switch 的原生 USB。
+2. 用桌面版 Chrome 或 Edge 打开 [在线控制台](https://wenghaoping.github.io/esp32-s3-switch-macro-configurator/)。
+3. 点击“连接设备”，在浏览器弹窗中选择 ESP32 的串口。
+
+页面由 GitHub Pages 提供，命令却直接从浏览器发往电脑本机的 USB-UART；宏计时与保存仍完全在开发板中进行。首次访问需要互联网加载网页，连接串口时浏览器会要求手动授权。
+
+### 方式二：ESP32 热点离线控制
+
+1. 设备正常启动后长按 **BOOT** 3 秒（请勿在上电时按住 BOOT）。
+2. 连接无密码热点 `ESP32-S3-Switch`。
+3. 打开 <http://192.168.9.1>；页面与控制接口均来自开发板，无需互联网。
+
+热点会在重启、再次长按 BOOT 或网页中主动关闭后停止。板载 RGB 灯会提示状态：按住 BOOT 时蓝色快闪；热点已开启但尚未连接设备时蓝色双闪；有设备连接热点后青色常亮。热点关闭后恢复正常状态灯颜色：空闲绿色、单宏青色、任务紫色。
+
+### 方式三：本地项目有线控制（开发与调试）
+
+1. 在本仓库首次执行 `npm install`。
+2. 执行 `npm run dev`，浏览器打开终端显示的本地地址（默认是 <http://localhost:5173>）。
+3. 使用开发板的 **USB-UART Type-C** 接口连接电脑，在 Chrome 或 Edge 点击“连接设备”，选择 ESP32 串口。
+
+这与此前的本地开发流程一致，不依赖 GitHub Pages；适合修改页面、查看调试输出或开发新功能。仅使用已发布网页配置设备时，优先选择方式一；不方便连接电脑或没有互联网时，选择方式二。
 
 ## 构建与烧录
 
@@ -131,27 +167,15 @@ pio run
 pio run -t upload --upload-port /dev/cu.usbserial-XXXX
 ```
 
-Windows 请使用类似 `COM5` 的端口，Linux 请使用类似 `/dev/ttyUSB0` 的端口。烧录完成后：
-
-1. 将原生 USB 连接到 Nintendo Switch 底座。
-2. 将 USB-UART 连接到电脑。
-3. 启动本地 WebUI。
-
-```bash
-npm run serve
-```
-
-使用桌面版 Chrome 或 Edge 打开 <http://localhost:5173>。Web Serial 要求安全上下文，
-因此不支持直接打开 `web/index.html`。
+Windows 请使用类似 `COM5` 的端口，Linux 请使用类似 `/dev/ttyUSB0` 的端口。烧录完成后，按上文选择任一种网页控制方式；原生 USB 可同时连接到 Nintendo Switch 底座。
 
 首页、控制、宏设置、录制和设备设置使用 Hash 路由，可从顶部导航进入；也可以使用 `?mock=1` 打开模拟设备模式，方便不接开发板时查看界面。
 
 ## 使用方法
 
-1. 点击 **连接设备**，然后选择 DevKitC-1 的 USB-UART 端口。
-2. 等待状态显示为 **已连接 · 待命**。
-3. 在控制页直接运行宏；在宏设置页编辑、录制、导入导出或恢复内置宏，并配置最多 5 项的板载任务方案。
-4. 点击 **停止**，立即发送一份所有输入均处于中立状态的手柄报告。
+1. 选择上方任一种网页入口，等待状态显示为 **已连接 · 待命**。
+2. 在控制页直接运行宏；在宏设置页编辑、录制、导入导出或恢复内置宏，并配置最多 5 项的板载任务方案。
+3. 点击 **停止**，立即发送一份所有输入均处于中立状态的手柄报告。
 
 断开 USB-UART 不会停止已经运行的流程。需要结束流程时，请重新连接并将其停止、复位开发板，
 或断开电源。
@@ -233,7 +257,13 @@ npm run serve
 
 状态灯效果如下：启动白色常亮；空闲绿色常亮；单宏运行青色常亮；任务方案运行紫色常亮；
 上传配置蓝色双闪；写入、删除或恢复 Flash 黄色快闪，成功后绿色双闪；GPIO 触发启动白色短闪；
-错误红色三闪循环。灯效在主循环中非阻塞更新，不会打断宏计时、串口处理或 USB 手柄报告。
+错误红色三闪循环。
+
+Wi-Fi 热点使用独立提示：正常启动后按住 BOOT 时蓝色快闪；长按 3 秒成功开启热点、但尚无
+设备接入时蓝色双闪；电脑或手机接入 `ESP32-S3-Switch` 后青色常亮。再次长按 BOOT、网页
+关闭热点或重启后，灯会回到空闲绿色。宏和任务运行时优先显示其运行颜色。
+
+灯效在主循环中非阻塞更新，不会打断宏计时、串口处理或 USB 手柄报告。
 
 ## 开发与验证
 
@@ -258,8 +288,8 @@ pio run
 - `firmware/include/ControllerPresets.h` — 共享的按键位、手柄报告和摇杆方向预设
 - `firmware/src/MacroLibrary.cpp` — 12 槽网页脚本 Flash 存储
 - `firmware/src/MacroEngine.cpp` — 非阻塞循环引擎
-- `firmware/src/main.cpp` — USB HID、串口协议和设备主循环
-- `web/src/` — Vue 3、Vue Router、Pinia 与 Web Serial 控制台
+- `firmware/src/main.cpp` — USB HID、串口/HTTP 协议、Wi-Fi 热点和设备主循环
+- `web/src/` — Vue 3、Vue Router、Pinia 与嵌入式 Wi-Fi 控制台
 - `web/src/utils/` — 宏 JSON、手柄映射、串口协议、备份和宏循环工具
 - `firmware/src/TaskPlanStorage.cpp` — 五段板载任务方案持久化
 - `tests/` — 在主机端运行的固件及浏览器逻辑测试
@@ -274,7 +304,3 @@ pio run
 本项目是非官方粉丝项目，与 Nintendo 无关联，也未获得 Nintendo 的认可或赞助。
 Splatoon、Splatoon Raiders、Nintendo Switch 以及相关名称和标志均归各自权利人所有。
 请负责任地使用自动化功能；本项目仅用于离线单人模式下刷取材料。
-
-## 致谢
-
-感谢 [我的茕茕孑立](https://space.bilibili.com/35615481) 提供原始游戏手柄宏。

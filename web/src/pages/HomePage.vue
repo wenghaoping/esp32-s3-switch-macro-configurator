@@ -43,20 +43,20 @@ const cards = [
 </RouterLink>
 </section>
   <section v-if="!device.connected" class="guide-card">
-<p class="eyebrow">FIRST RUN / 初次使用</p>
-<h2>三步开始</h2>
+<p class="eyebrow">CONNECTION / 连接方式</p>
+<h2>任选一种方式连接开发板</h2>
 <ol>
 <li>
-<b>连接两根线</b>
-<span>原生 USB 接 Switch，USB-UART 接电脑。</span>
+<b>推荐：在线控制台（当前网页）</b>
+<span>用 USB-UART Type-C 连接电脑，点击上方“连接 ESP32-S3”，然后在 Chrome 或 Edge 中选择开发板串口。</span>
 </li>
 <li>
-<b>连接设备</b>
-<span>使用桌面版 Chrome 或 Edge 选择开发板串口。</span>
+<b>本地项目（开发调试）</b>
+<span>在项目目录运行 npm run dev，打开 http://localhost:5173，再通过 USB-UART Type-C 连接开发板。</span>
 </li>
 <li>
-<b>选择宏</b>
-<span>单独持续运行，或配置一套最多五项的宏循环。</span>
+<b>板载热点（断网或手机使用）</b>
+<span>正常启动后长按 BOOT 3 秒，连接 ESP32-S3-Switch 热点并访问 http://192.168.9.1。</span>
 </li>
 </ol>
 </section>

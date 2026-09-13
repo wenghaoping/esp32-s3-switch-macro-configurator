@@ -4,7 +4,7 @@ import test from "node:test";
 import { buildMacroUploadCommands } from "../../web/src/utils/macro-editor.js";
 import { buildTaskUploadCommands } from "../../web/src/utils/task-plan.js";
 import { formatDuration, parseDeviceLine } from "../../web/src/utils/protocol.js";
-import { MockSerialTransport, SerialLineDecoder } from "../../web/src/utils/serial-transport.js";
+import { HttpTransport, MockSerialTransport, SerialLineDecoder } from "../../web/src/utils/serial-transport.js";
 
 test("keeps UTF-8 names intact when a Chinese character spans serial chunks", () => {
   const bytes = new TextEncoder().encode('{"name":"随便测试一下"}\n');
@@ -34,6 +34,33 @@ test("handles compatibility responses and malformed input", () => {
 
 test("formats the complete embedded cycle", () => {
   assert.equal(formatDuration(63595), "01:03.595");
+});
+
+test("HTTP transport preserves the board command and response protocol", async () => {
+  const originalFetch = globalThis.fetch;
+  const requests = [];
+  const lines = [];
+  globalThis.fetch = async (url) => {
+    requests.push(new URL(url, "http://192.168.9.1"));
+    return new Response('{"type":"info","ok":true,"firmware":"SplatoonFarmers/2.1.0"}\n');
+  };
+  try {
+    const transport = new HttpTransport({
+      onLine: (line) => lines.push(parseDeviceLine(line)),
+      onDisconnect: () => assert.fail("HTTP transport should stay connected"),
+    });
+    await transport.connect();
+    const info = await transport.sendAndWait("HELLO", {
+      predicate: (message) => message?.type === "info",
+    });
+
+    assert.equal(requests[0].pathname, "/api/command");
+    assert.equal(requests[0].searchParams.get("command"), "HELLO");
+    assert.equal(info.firmware, "SplatoonFarmers/2.1.0");
+    assert.equal(lines[0].type, "info");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test("mock transport follows HELLO, START, STATUS and STOP", async () => {

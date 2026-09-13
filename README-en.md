@@ -1,5 +1,11 @@
 # ESP32-S3 Switch Macro Configurator
 
+> [!TIP]
+> ## Online console
+> **[https://wenghaoping.github.io/esp32-s3-switch-macro-configurator/](https://wenghaoping.github.io/esp32-s3-switch-macro-configurator/)**
+>
+> Connect the board's **USB-UART Type-C** port, open this address in Chrome or Edge, then select **Connect device** and choose the ESP32 serial port.
+
 [简体中文文档](./README.md)
 
 > [!IMPORTANT]
@@ -22,7 +28,8 @@ Required setup for that example macro: [Bilibili](https://www.bilibili.com/video
 ## Features
 
 - Emulates a wired Nintendo Switch controller over the ESP32-S3 native USB
-  port while USB-UART remains available for browser control.
+  port, with one browser console deployed to GitHub Pages and embedded in the
+  board's on-demand Wi-Fi hotspot.
 - Records, edits, imports, and runs custom button, D-pad, and dual-stick macros
   for any game that supports a Switch wired controller.
 - Includes four replaceable C++ example macros in firmware: Tempura Nest weapon
@@ -37,9 +44,8 @@ Required setup for that example macro: [Bilibili](https://www.bilibili.com/video
 - Keeps an active macro or task running if the browser or USB-UART connection
   drops. The board owns all timing, so ordinary serial jitter cannot interrupt
   a sequence halfway through.
-- Provides a Vue 3 Web Serial console with home, control, script library,
-  editor, recorder, and device/GPIO pages. Routing does not discard the live
-  serial connection.
+- Provides an embedded Vue 3 web console with home, control, script library,
+  editor, recorder, and device/GPIO pages.
 - Records controller actions, edits step-by-step macros, imports/exports
   version-2 JSON macros, and backs up or restores the full macro library.
 - Supports browser controls, keyboard input, Xbox Elite 2, and PS5 DualSense
@@ -93,10 +99,9 @@ USB-UART connectors.
 | Link | Board connection | Purpose |
 | --- | --- | --- |
 | Native USB | GPIO19 D- / GPIO20 D+ | Wired controller to the Switch dock |
-| USB-UART | UART0 through the onboard bridge | Browser control from the computer |
+| USB-UART | UART0 through the onboard bridge | Flashing, logs, and development serial control |
 
-Both links can stay connected at the same time. See the
-[ESP32-S3-DevKitC-1 user guide](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32s3/esp32-s3-devkitc-1/user_guide_v1.0.html)
+See the [ESP32-S3-DevKitC-1 user guide](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32s3/esp32-s3-devkitc-1/user_guide_v1.0.html)
 for connector placement.
 
 If the board exposes only native USB, connect an external USB-UART adapter:
@@ -108,6 +113,48 @@ If the board exposes only native USB, connect an external USB-UART adapter:
 Do not connect the adapter VCC when the board is already powered from the
 Switch. For the strongest protection against host-side reset signals, use only
 TX, RX, and GND.
+
+## Three ways to use the web console
+
+### GitHub Pages over USB-UART
+
+1. Connect the board's **USB-UART Type-C** connector to the computer. Do not
+   use the native USB port that is connected to the Switch.
+2. Open the [online console](https://wenghaoping.github.io/esp32-s3-switch-macro-configurator/)
+   in desktop Chrome or Edge.
+3. Select **Connect device** and choose the ESP32 serial port in the browser
+   permission dialog.
+
+GitHub Pages delivers the UI, but commands go directly from the browser to the
+computer's USB-UART device. Macro timing and storage stay on the board. The
+page needs internet access for its first load, and the browser always requires
+an explicit serial-port selection.
+
+### Offline ESP32 Wi-Fi hotspot
+
+1. After a normal boot, hold **BOOT** for three seconds. Do not hold it while
+   powering on.
+2. Join the open `ESP32-S3-Switch` hotspot.
+3. Open <http://192.168.9.1>. The page and control API both come from the board,
+   so no internet connection is required.
+
+The hotspot stops after a restart, another three-second BOOT hold, or the
+hotspot stop button on the page. The RGB LED fast-blinks blue while BOOT is
+held, double-blinks blue until a client joins the hotspot, and stays cyan while
+a client is connected. Once the hotspot closes, normal idle/macro/task colors
+resume.
+
+### Local project over USB-UART (development and debugging)
+
+1. In this repository, run `npm install` once.
+2. Run `npm run dev`, then open the local address printed by Vite (normally
+   <http://localhost:5173>).
+3. Connect the board's **USB-UART Type-C** port and, in Chrome or Edge, select
+   **Connect device** and choose the ESP32 serial port.
+
+This is the original local-development workflow and does not depend on GitHub
+Pages. Use it while changing or debugging the web console; use GitHub Pages for
+ordinary wired configuration and the Wi-Fi hotspot when configuring offline.
 
 ## Build and flash
 
@@ -126,22 +173,13 @@ working commit. Flash through the board's USB-UART connector:
 pio run -t upload --upload-port /dev/cu.usbserial-XXXX
 ```
 
-Use a port such as `COM5` on Windows or `/dev/ttyUSB0` on Linux. After flashing:
-
-1. Connect native USB to the Nintendo Switch dock.
-2. Connect USB-UART to the computer.
-3. Start the local WebUI.
-
-```bash
-npm run serve
-```
-
-Open <http://localhost:5173> in desktop Chrome or Edge. Web Serial requires a
-secure context, so opening `web/index.html` directly is not supported.
+Use a port such as `COM5` on Windows or `/dev/ttyUSB0` on Linux. After flashing,
+choose any of the three web-console methods above. The native USB port can
+remain connected to the Nintendo Switch dock.
 
 ## Use
 
-1. Select **连接设备** and choose the DevKitC-1 USB-UART port.
+1. Open either web-console entry above and wait until the board is connected.
 2. Open **Control** to run one script continuously, or open **Scripts** to
    edit slots and configure a board task.
 3. Select **立即停止** to send a neutral controller report.
@@ -259,9 +297,9 @@ Project layout:
 - `firmware/include/ControllerPresets.h` — shared controller reports, button masks, and stick directions
 - `firmware/src/MacroLibrary.cpp` — persistent twelve-slot Flash macro library
 - `firmware/src/MacroEngine.cpp` — non-blocking loop engine
-- `firmware/src/main.cpp` — USB HID, serial protocol, and device main loop
+- `firmware/src/main.cpp` — USB HID, serial/HTTP protocol, Wi-Fi hotspot, and device main loop
 - `firmware/src/TaskPlanStorage.cpp` — persistent five-item board task plan
-- `web/src/` — Vue 3, Vue Router, Pinia, and Web Serial console
+- `web/src/` — Vue 3, Vue Router, Pinia, and embedded Wi-Fi console
 - `web/src/utils/` — macro JSON, controller mapping, serial protocol, backup, and task-plan utilities
 - `tests/` — host-side firmware and browser-logic tests
 
@@ -278,7 +316,3 @@ This is an unofficial fan project and is not affiliated with, endorsed by, or
 sponsored by Nintendo. Splatoon, Splatoon Raiders, Nintendo Switch, and related
 names and marks belong to their respective owners. Use automation responsibly;
 the project is intended for offline, single-player material farming.
-
-## Credits
-
-Thanks to [我的茕茕孑立](https://space.bilibili.com/35615481) for the original game controller macro.

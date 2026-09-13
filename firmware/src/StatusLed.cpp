@@ -149,6 +149,21 @@ void StatusLed::renderBaseState(uint32_t elapsedMs) {
     case BaseState::kIdle:
       showScaled(0, 255, 80, 255);
       return;
+    case BaseState::kWifiConsoleStarting: {
+      const uint32_t phase = elapsedMs % 320;
+      showScaled(20, 100, 255, phase < 150 ? 255 : 8);
+      return;
+    }
+    case BaseState::kWifiConsole: {
+      const uint32_t phase = elapsedMs % 1000;
+      showScaled(30, 90, 255, phase < 120 || (phase >= 300 && phase < 420)
+                                   ? 230
+                                   : 12);
+      return;
+    }
+    case BaseState::kWifiConsoleConnected:
+      showScaled(0, 220, 255, 255);
+      return;
     case BaseState::kMacroRunning:
       showScaled(0, 220, 255, 255);
       return;

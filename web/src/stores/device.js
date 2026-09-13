@@ -1,7 +1,7 @@
 import { computed, ref, shallowRef } from "vue";
 import { defineStore } from "pinia";
 import { parseDeviceLine } from "../utils/protocol.js";
-import { MockSerialTransport, SerialTransport } from "../utils/serial-transport.js";
+import { HttpTransport, MockSerialTransport, SerialTransport } from "../utils/serial-transport.js";
 import { buildMacroUploadCommands, normalizeMacro } from "../utils/macro-editor.js";
 import { BUILTIN_MACROS } from "../utils/builtin-macros.js";
 import { buildTaskUploadCommands, normalizeTaskPlan } from "../utils/task-plan.js";
@@ -32,6 +32,9 @@ export const useDeviceStore = defineStore("device", () => {
   const slots = ref(Array.from({ length: MACRO_SLOT_COUNT }, (_, slot) => initialSlot(slot)));
   const taskPlan = ref(null);
   const triggerConfig = ref(null);
+  const embeddedConsole = !import.meta.env.DEV
+    && window.location.hostname === "192.168.9.1"
+    && new URLSearchParams(window.location.search).get("mock") !== "1";
   let pollTimer = null;
   let notificationTimer = null;
   let handshakeActive = false;
@@ -103,7 +106,9 @@ export const useDeviceStore = defineStore("device", () => {
     if (!transport.value) {
       const Transport = new URLSearchParams(window.location.search).get("mock") === "1"
         ? MockSerialTransport
-        : SerialTransport;
+        : embeddedConsole
+          ? HttpTransport
+          : SerialTransport;
       transport.value = new Transport({ onLine: handleLine, onDisconnect: handleDisconnect });
     }
     return transport.value;
@@ -116,7 +121,7 @@ export const useDeviceStore = defineStore("device", () => {
     error.value = "";
     try {
       const serial = createTransport();
-      if (authorizedOnly && navigator.serial?.getPorts) {
+      if (serial instanceof SerialTransport && authorizedOnly && navigator.serial?.getPorts) {
         const [port] = await navigator.serial.getPorts();
         if (!port) throw new Error("没有找到已授权设备，请使用“连接设备”。");
         await serial.connectPort(port);
@@ -141,7 +146,7 @@ export const useDeviceStore = defineStore("device", () => {
     await transport.value?.disconnect();
     connected.value = false;
     ready.value = false;
-    notify("已断开电脑与开发板的串口连接。");
+    notify(embeddedConsole ? "已断开 Wi-Fi 控制台。" : "已断开电脑与开发板的串口连接。");
   }
 
   async function send(command) {
@@ -157,7 +162,10 @@ export const useDeviceStore = defineStore("device", () => {
       message = await transport.value.sendAndWait(command, { predicate, timeoutMs });
     } catch (reason) {
       if (/timed out|timeout/i.test(reason?.message || "")) {
-        const errorMessage = `等待设备响应超时（${command.split(" ")[0]}）。请确认已烧录当前固件，并且电脑连接的是上方 USB-UART 接口。`;
+        const hint = embeddedConsole
+          ? "请确认热点仍开启，并且当前设备连接的是 ESP32 热点。"
+          : "请确认已烧录当前固件，并且电脑连接的是上方 USB-UART 接口。";
+        const errorMessage = `等待设备响应超时（${command.split(" ")[0]}）。${hint}`;
         notify(errorMessage, "error");
         throw new Error(errorMessage);
       }
@@ -300,11 +308,16 @@ export const useDeviceStore = defineStore("device", () => {
     notify("GPIO 触发配置已保存到开发板。");
   }
 
+  async function stopWifiConsole() {
+    if (!(transport.value instanceof HttpTransport)) return;
+    await transport.value.stopAccessPoint();
+  }
+
   return {
     connected, ready, connecting, error, notification, status, slots, taskPlan, triggerConfig, macroStorageStatus,
-    running, activeName, connect, disconnect, send, refreshAll, runSlot,
+    running, activeName, embeddedConsole, connect, disconnect, send, refreshAll, runSlot,
     runTask, stop, manual, manualReport, loadMacro, saveMacro, restoreMacro, deleteMacro, resetMacroStorage,
-    saveTask, deleteTask, saveTriggers, notify,
+    saveTask, deleteTask, saveTriggers, stopWifiConsole, notify,
   };
 });
 
